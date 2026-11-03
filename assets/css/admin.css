@@ -277,3 +277,11 @@ table.data td small { display: block; color: var(--muted); font-size: .8rem; }
 .confirm-text { color: var(--text-2); margin: 0; }
 .kbd-note { display: flex; gap: .6rem; align-items: flex-start; padding: .9rem 1rem; border-radius: 12px; background: var(--info-bg); color: var(--text-2); font-size: .9rem; margin-bottom: 1rem; }
 .kbd-note .ico { color: var(--info); margin-top: .1rem; }
+.img-row { display: flex; gap: .7rem; align-items: center; }
+.img-prev { width: 64px; height: 48px; border-radius: 10px; flex: none; background: var(--surface-2) center/cover no-repeat; border: 1px solid var(--border); display: grid; place-items: center; color: var(--muted); }
+.ic-img { height: 130px; margin: -1.15rem -1.15rem .4rem; background: var(--surface-2) center/cover no-repeat; border-radius: var(--radius) var(--radius) 0 0; }
+.item-card { overflow: hidden; }
+.promo-val { font-family: var(--font-head); font-weight: 800; font-size: 1.35rem; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.promo-meta { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
+.promo-meta .mono { border: 1.5px dashed var(--orange); color: var(--orange); padding: .25rem .55rem; border-radius: 8px; font-size: .85rem; }
+.promo-meta small { color: var(--muted); font-size: .8rem; }

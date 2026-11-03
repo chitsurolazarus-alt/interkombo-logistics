@@ -85,6 +85,7 @@
   const NAV = [
     { group: 'Overview', items: [['dashboard', 'Dashboard', 'dashboard']] },
     { group: 'Operations', items: [['quotes', 'Quote requests', 'file'], ['shipments', 'Shipments', 'truck'], ['messages', 'Messages', 'inbox']] },
+    { group: 'Marketing', items: [['subscribers', 'Subscribers', 'mail'], ['promotions', 'Promotions', 'tag']] },
     { group: 'Website', items: [['content', 'Site content', 'edit'], ['services', 'Services', 'box'], ['pricing', 'Pricing', 'tag'], ['crossborder', 'Cross-border', 'globe'], ['testimonials', 'Testimonials', 'star'], ['faqs', 'FAQs', 'help']] },
     { group: 'System', items: [['settings', 'Settings', 'settings']] }
   ];
@@ -163,6 +164,7 @@
     if (f.type === 'lines') return `<label class="${cls}"><span>${E(f.label)}${req}</span><textarea class="textarea" name="${f.name}" rows="${f.rows || 4}">${E((val || []).join('\n'))}</textarea><small class="help">One per line</small></label>`;
     if (f.type === 'select') return `<label class="${cls}"><span>${E(f.label)}${req}</span><select class="select" name="${f.name}">${f.options.map((o) => { const [ov, ol] = Array.isArray(o) ? o : [o, o]; return `<option value="${E(ov)}" ${String(ov) === String(val) ? 'selected' : ''}>${E(ol)}</option>`; }).join('')}</select></label>`;
     if (f.type === 'icon') return `<div class="field full"><span class="label">${E(f.label)}</span><div class="icon-pick">${['home', 'building', 'truck', 'globe', 'route', 'box', 'package', 'shield', 'map', 'zap', 'users', 'calendar', 'clock', 'wallet', 'headset', 'flag'].map((n) => `<label title="${n}"><input type="radio" name="${f.name}" value="${n}" ${n === val ? 'checked' : ''}>${icon(n, '', 20)}</label>`).join('')}</div></div>`;
+    if (f.type === 'image') return `<label class="${cls} img-field"><span>${E(f.label)}</span><div class="img-row"><div class="img-prev" style="${val ? `background-image:url('${E(IKL.img(val, 300))}')` : ''}">${val ? '' : icon('box', '', 20)}</div><input class="input" name="${f.name}" type="url" value="${E(val)}" placeholder="Paste an image link (https://…)"></div><small class="help">${E(f.help || 'Paste a link to any online photo. Leave empty for no image.')}</small></label>`;
     if (f.type === 'switch') return `<div class="${cls}"><label class="switch"><input type="checkbox" name="${f.name}" ${val ? 'checked' : ''}><span class="tr"></span>${E(f.label)}</label>${f.help ? `<small class="help">${E(f.help)}</small>` : ''}</div>`;
     return `<label class="${cls}"><span>${E(f.label)}${req}</span><input class="input" name="${f.name}" type="${f.type || 'text'}" value="${E(val)}" placeholder="${E(f.placeholder || '')}" ${f.type === 'tel' ? 'inputmode="tel"' : ''} ${f.type === 'number' ? 'inputmode="decimal" step="any"' : ''}>${f.help ? `<small class="help">${E(f.help)}</small>` : ''}</label>`;
   }
@@ -199,6 +201,12 @@
     });
   }
 
+  document.addEventListener('input', (e) => {
+    const f = e.target.closest('.img-field'); if (!f || e.target.tagName !== 'INPUT') return;
+    const pv = f.querySelector('.img-prev'); const v = e.target.value.trim();
+    pv.style.backgroundImage = v ? `url('${v.replace(/'/g, '%27')}')` : ''; pv.innerHTML = v ? '' : icon('box', '', 20);
+  });
+
   /* ================= VIEWS ================= */
   const V = {};
 
@@ -212,7 +220,7 @@
     el.innerHTML = `
       <div class="welcome">
         <div><h2>Good ${hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'} 👋</h2><p>${newQ.length ? `You have <b>${newQ.length}</b> new quote request${newQ.length > 1 ? 's' : ''} waiting.` : 'You are all caught up on quote requests.'}</p></div>
-        <div class="actions"><a href="#/shipments?new=1" class="btn btn-white btn-sm">${icon('plus', '', 16)} New shipment</a><a href="#/quotes" class="btn btn-outline-white btn-sm">${icon('file', '', 16)} View quotes</a></div>
+        <div class="actions"><a href="#/subscribers" class="btn btn-outline-white btn-sm">${icon('mail', '', 16)} ${(d.subscribers || []).length} subscribers</a><a href="#/shipments?new=1" class="btn btn-white btn-sm">${icon('plus', '', 16)} New shipment</a><a href="#/quotes" class="btn btn-outline-white btn-sm">${icon('file', '', 16)} View quotes</a></div>
       </div>
       <div class="grid-4" style="margin-bottom:1rem">
         <a href="#/quotes" class="card stat-card"><div class="s-top"><small>New quotes</small><span class="s-ico">${icon('file', '', 20)}</span></div><b>${newQ.length}</b><span class="trend">${d.quotes.length} total requests</span></a>
@@ -284,6 +292,7 @@
           <div><small>Phone</small><b>${E(q.phone)}</b></div>
           <div><small>Email</small><b>${E(q.email || '—')}</b></div>
           <div class="full"><small>Extras</small><b>${q.extras && q.extras.length ? E(q.extras.join(', ')) : 'None'}</b></div>
+          ${q.promo ? `<div class="full"><small>Promo code</small><b>${E(q.promo)} · saved ${IKL.money(q.discount)}</b></div>` : ''}
           ${q.notes ? `<div class="full"><small>Notes</small><b>${E(q.notes)}</b></div>` : ''}
         </div>
         <label class="field"><span>Status</span><select class="select" id="qStatus">${STATUS_Q.map(([s, l]) => `<option value="${s}" ${q.status === s ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`,
@@ -465,30 +474,38 @@
     ];
     const heroF = [
       { name: 'eyebrow', label: 'Small label above headline', full: true }, { name: 'title', label: 'Headline (first line)' }, { name: 'highlight', label: 'Headline highlight (orange)' },
-      { name: 'subtitle', label: 'Intro paragraph', type: 'textarea', full: true, rows: 3 }
+      { name: 'subtitle', label: 'Intro paragraph', type: 'textarea', full: true, rows: 3 },
+      { name: 'image', label: 'Hero photo', type: 'image', full: true }
     ];
     const aboutF = [
       { name: 'title', label: 'About heading', full: true }, { name: 'body', label: 'About text', type: 'textarea', full: true, rows: 5 },
       { name: 'mission', label: 'Mission', type: 'textarea', rows: 3 }, { name: 'vision', label: 'Vision', type: 'textarea', rows: 3 },
-      { name: 'values', label: 'Values', type: 'lines', full: true, rows: 5 }
+      { name: 'values', label: 'Values', type: 'lines', full: true, rows: 5 },
+      { name: 'image', label: 'About photo', type: 'image', full: true }
+    ];
+    const mediaF = [
+      { name: 'why', label: '“Why choose us” background', type: 'image', full: true },
+      { name: 'cta', label: 'Call-to-action banner background', type: 'image', full: true },
+      { name: 'crossBorder', label: 'Cross-border documents photo', type: 'image', full: true }
     ];
     const pre = (p, fs) => fs.map((x) => ({ ...x, name: p + '.' + x.name }));
     const vals = (p, o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [p + '.' + k, v]));
     const statsRows = d.stats.map((s, i) => `<div class="r r-stat"><label><span class="mini-label">Number</span><input class="input" name="st.${i}.value" value="${E(s.value)}"></label><label><span class="mini-label">Suffix</span><input class="input" name="st.${i}.suffix" value="${E(s.suffix)}" placeholder="+, %, /7"></label><label><span class="mini-label">Label</span><input class="input" name="st.${i}.label" value="${E(s.label)}"></label></div>`).join('');
-    const all = { ...vals('c', d.company), ...vals('h', d.hero), ...vals('a', d.about) };
+    const all = { ...vals('c', d.company), ...vals('h', d.hero), ...vals('a', d.about), ...vals('md', d.media || {}) };
     const f = formPage(el,
       `<div class="kbd-note">${icon('help', '', 18)}<span>Edit any text below and press <b>Save changes</b>. Your website updates straight away.</span></div>` +
       section('Business details', 'Shown in the header, footer and contact page.', pre('c', companyF).map((x) => fieldHTML(x, all[x.name])).join('')) +
       section('Homepage hero', 'The first thing visitors see.', pre('h', heroF).map((x) => fieldHTML(x, all[x.name])).join('')) +
       section('Stats band', 'The four highlight numbers on the homepage.', `<div class="row-editor full">${statsRows}</div>`) +
-      section('About page', '', pre('a', aboutF).map((x) => fieldHTML(x, all[x.name])).join('')),
+      section('About page', '', pre('a', aboutF).map((x) => fieldHTML(x, all[x.name])).join('')) +
+      section('Other photos', 'Background photos used around the website.', pre('md', mediaF).map((x) => fieldHTML(x, all[x.name])).join('')),
       (form) => {
-        const c = readFields(form, pre('c', companyF)), h = readFields(form, pre('h', heroF)), a = readFields(form, pre('a', aboutF));
+        const c = readFields(form, pre('c', companyF)), h = readFields(form, pre('h', heroF)), a = readFields(form, pre('a', aboutF)), md = readFields(form, pre('md', mediaF));
         if (!c['c.name']) { form.elements['c.name'].classList.add('invalid'); toast('Business name is required'); return false; }
         const strip = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k.split('.').slice(1).join('.'), v]));
         IKL.update((data) => {
           Object.assign(data.company, strip(c)); data.company.whatsapp = String(data.company.whatsapp).replace(/\D/g, '');
-          Object.assign(data.hero, strip(h)); Object.assign(data.about, strip(a));
+          Object.assign(data.hero, strip(h)); Object.assign(data.about, strip(a)); data.media = Object.assign(data.media || {}, strip(md));
           data.stats = data.stats.map((s, i) => ({ value: form.elements[`st.${i}.value`].value.trim(), suffix: form.elements[`st.${i}.suffix`].value.trim(), label: form.elements[`st.${i}.label`].value.trim() }));
         });
       });
@@ -514,11 +531,12 @@
     fields: [
       { name: 'title', label: 'Service name', required: true, full: true },
       { name: 'icon', label: 'Icon', type: 'icon' },
+      { name: 'image', label: 'Photo', type: 'image', full: true },
       { name: 'short', label: 'Short description (cards)', required: true, full: true },
       { name: 'description', label: 'Full description (service page)', type: 'textarea', full: true, rows: 4 },
       { name: 'features', label: 'Key features', type: 'lines', full: true }
     ],
-    card: (s) => `<div class="ic-top"><span class="ic-ico">${icon(s.icon, '', 22)}</span><h3>${E(s.title)}</h3></div><p>${E(s.short)}</p>`
+    card: (s) => `${s.image ? `<div class="ic-img" style="background-image:url('${E(IKL.img(s.image, 600))}')"></div>` : ''}<div class="ic-top"><span class="ic-ico">${icon(s.icon, '', 22)}</span><h3>${E(s.title)}</h3></div><p>${E(s.short)}</p>`
   });
 
   V.testimonials = (el) => {
@@ -541,6 +559,136 @@
     fields: [{ name: 'q', label: 'Question', required: true, full: true }, { name: 'a', label: 'Answer', type: 'textarea', required: true, full: true, rows: 5 }],
     card: (f) => `<h3>${E(f.q)}</h3><p>${E(f.a)}</p>`
   });
+
+  /* ---------- Subscribers ---------- */
+  let subSearch = '';
+  V.subscribers = (el) => {
+    const list = D().subscribers || [];
+    el.innerHTML = `
+      <div class="kbd-note">${icon('mail', '', 18)}<span>People who joined your mailing list from the website newsletter, the discount popup or the quote form. Use <b>Email subscribers</b> to send them a promotion from your own email app.</span></div>
+      <div class="toolbar">
+        <div class="search">${icon('search', '', 18)}<input class="input" id="subSearch" placeholder="Search email or name…" value="${E(subSearch)}"></div>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost" id="subAdd">${icon('plus', '', 17)} Add</button>
+        <button class="btn btn-ghost" id="subCsv">${icon('download', '', 17)} Export CSV</button>
+        <button class="btn btn-primary" id="subMail">${icon('mail', '', 17)} Email subscribers</button>
+      </div>
+      <div class="card" id="subList"></div>`;
+    const draw = () => {
+      const s = subSearch.toLowerCase();
+      const rows = (D().subscribers || []).filter((x) => !s || (x.email + ' ' + x.name).toLowerCase().includes(s));
+      $('#subList').innerHTML = rows.length ? `<div class="table-wrap"><table class="data"><thead><tr><th>Email</th><th>Name</th><th>Source</th><th>Joined</th><th></th></tr></thead><tbody>
+        ${rows.map((x) => `<tr data-sub="${E(x.id)}"><td class="c-span"><b style="word-break:break-all">${E(x.email)}</b></td><td data-l="Name">${E(x.name || '—')}</td><td data-l="Source">${E(x.source || '')}</td><td data-l="Joined">${IKL.timeAgo(x.createdAt)}</td>
+          <td class="c-end" style="white-space:nowrap"><a class="sq-btn" href="mailto:${E(x.email)}" aria-label="Email ${E(x.email)}" onclick="event.stopPropagation()">${icon('mail', '', 15)}</a> <button class="sq-btn danger" data-del="${E(x.id)}" aria-label="Remove">${icon('trash', '', 15)}</button></td></tr>`).join('')}</tbody></table></div>`
+        : `<div class="empty">${icon('mail', '', 34)}<p>No subscribers yet. They’ll appear here when visitors join your mailing list.</p></div>`;
+      $$('[data-del]', $('#subList')).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); confirmDialog('Remove this subscriber from your list?', () => { IKL.update((d) => { d.subscribers = d.subscribers.filter((x) => x.id !== b.dataset.del); }); toast('Subscriber removed'); refresh(); }); }));
+    };
+    $('#subSearch').oninput = (e) => { subSearch = e.target.value; draw(); };
+    $('#subAdd').onclick = () => formModal({ title: 'Add subscriber', fields: [{ name: 'email', label: 'Email', type: 'email', required: true, full: true }, { name: 'name', label: 'Name', full: true }], saveLabel: 'Add', onSave: (v) => {
+      const em = v.email.toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) { toast('Please enter a valid email'); return false; }
+      if ((D().subscribers || []).some((x) => x.email === em)) { toast('That email is already on the list'); return false; }
+      IKL.update((d) => { d.subscribers = d.subscribers || []; d.subscribers.unshift({ id: IKL.uid('s'), createdAt: IKL.now(), email: em, name: v.name, source: 'Added by admin' }); }); toast('Subscriber added'); refresh(); } });
+    $('#subCsv').onclick = () => {
+      const rows = [['Email', 'Name', 'Source', 'Joined']].concat((D().subscribers || []).map((x) => [x.email, x.name || '', x.source || '', x.createdAt]));
+      const csv = rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'interkombo-subscribers.csv'; a.click(); toast('CSV downloaded');
+    };
+    $('#subMail').onclick = () => composeEmail((D().subscribers || []).map((x) => x.email));
+    draw();
+  };
+  function composeEmail(emails) {
+    const promos = (D().promos || []).filter((p) => p.active);
+    const c = D().company;
+    const tpl = promos[0] ? `Hi there,\n\n${promos[0].title}! Use code ${promos[0].code} when you request a quote on our website.\n\n${promos[0].description}\n\nGet your instant quote: ${location.origin}/#/quote?promo=${promos[0].code}\n\nKind regards,\n${c.name}\n${c.phone}` : `Hi there,\n\n\n\nKind regards,\n${c.name}\n${c.phone}`;
+    modal({
+      title: 'Email subscribers', sub: `${emails.length} recipient${emails.length === 1 ? '' : 's'} · sent from your own email app`, wide: true,
+      body: `<form class="modal-form" id="mailForm" novalidate>
+        <label class="field full"><span>Recipients (BCC, so they can’t see each other)</span><textarea class="textarea" name="to" rows="3">${E(emails.join(', '))}</textarea><small class="help">You can add or remove any email addresses here, separated by commas.</small></label>
+        ${promos.length ? `<label class="field full"><span>Insert a promotion</span><select class="select" name="promo"><option value="">— Choose a promo —</option>${promos.map((p) => `<option value="${E(p.id)}">${E(p.code)} · ${E(p.title)}</option>`).join('')}</select></label>` : ''}
+        <label class="field full"><span>Subject</span><input class="input" name="subject" value="${E(promos[0] ? promos[0].title + ' with ' + c.name : 'News from ' + c.name)}"></label>
+        <label class="field full"><span>Message</span><textarea class="textarea" name="body" rows="9">${E(tpl)}</textarea></label>
+      </form>`,
+      foot: `<button class="btn btn-ghost left" id="copyEmails">${icon('copy', '', 16)} Copy emails</button><button class="btn btn-ghost" id="copyMsg">${icon('copy', '', 16)} Copy message</button><button class="btn btn-primary" id="openMail">${icon('mail', '', 17)} Open in email app</button>`,
+      onMount: (el) => {
+        const f = $('#mailForm', el);
+        if (f.promo) f.promo.onchange = () => { const p = promos.find((x) => x.id === f.promo.value); if (!p) return; f.subject.value = p.title + ' with ' + c.name; f.body.value = `Hi there,\n\n${p.title}! Use code ${p.code} when you request a quote on our website.\n\n${p.description}\n\nGet your instant quote: ${location.origin}/#/quote?promo=${p.code}\n\nKind regards,\n${c.name}\n${c.phone}`; };
+        const list = () => f.to.value.split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean);
+        $('#copyEmails', el).onclick = () => { try { navigator.clipboard.writeText(list().join(', ')); } catch (e) {} toast('Email addresses copied'); };
+        $('#copyMsg', el).onclick = () => { try { navigator.clipboard.writeText(f.subject.value + '\n\n' + f.body.value); } catch (e) {} toast('Message copied'); };
+        $('#openMail', el).onclick = () => {
+          const to = list(); if (!to.length) { toast('Add at least one email address'); return; }
+          const url = `mailto:${encodeURIComponent(c.email || '')}?bcc=${encodeURIComponent(to.join(','))}&subject=${encodeURIComponent(f.subject.value)}&body=${encodeURIComponent(f.body.value)}`;
+          if (url.length > 1900) toast('Long list: if your email app cuts it off, use “Copy emails” and paste them into BCC');
+          location.href = url;
+        };
+      }
+    });
+  }
+
+  /* ---------- Promotions ---------- */
+  V.promotions = (el) => {
+    const d = D(), m = d.marketing || {};
+    const promos = d.promos || [];
+    const valText = (p) => (p.type === 'percent' ? p.value + '% off' : IKL.money(p.value) + ' off');
+    const expired = (p) => p.expires && new Date(p.expires + 'T23:59:59') < new Date();
+    const promoFields = [
+      { name: 'code', label: 'Promo code', required: true, placeholder: 'e.g. WINTER20', help: 'Customers type this in the quote form' },
+      { name: 'title', label: 'Headline', required: true, placeholder: '20% off winter moves' },
+      { name: 'type', label: 'Discount type', type: 'select', options: [['percent', 'Percentage (%)'], ['fixed', 'Fixed amount (R)']] },
+      { name: 'value', label: 'Discount value', type: 'number', required: true },
+      { name: 'description', label: 'Description', type: 'textarea', rows: 2, full: true },
+      { name: 'expires', label: 'Expiry date (optional)', type: 'date' },
+      { name: 'active', label: 'Active (code works)', type: 'switch' },
+      { name: 'featured', label: 'Show in “Specials” on the homepage', type: 'switch' }
+    ];
+    const savePromo = (v, id) => {
+      v.code = String(v.code).toUpperCase().replace(/\s+/g, '');
+      if (!v.value || v.value <= 0) { toast('Enter a discount value above 0'); return false; }
+      if (v.type === 'percent' && v.value > 90) { toast('Percentage must be 90% or less'); return false; }
+      if ((D().promos || []).some((p) => p.code.toUpperCase() === v.code && p.id !== id)) { toast('That code already exists'); return false; }
+      IKL.update((x) => { x.promos = x.promos || []; if (id) Object.assign(x.promos.find((p) => p.id === id), v); else x.promos.push({ id: IKL.uid('p'), ...v }); });
+      toast(id ? 'Promotion saved' : 'Promotion created'); refresh();
+    };
+    el.innerHTML = `
+      <div class="toolbar"><span class="help">Promo codes customers can use in the quote calculator. Featured ones show in the Specials section on your homepage.</span><span class="spacer"></span><button class="btn btn-primary" id="addPromo">${icon('plus', '', 18)} New promotion</button></div>
+      <div class="item-grid" style="margin-bottom:1.5rem">${promos.map((p) => `
+        <div class="item-card promo-card">
+          <div class="ic-top"><span class="promo-val">${E(valText(p))}</span><div style="margin-left:auto">${!p.active ? pill('lost', 'Off') : expired(p) ? pill('lost', 'Expired') : pill('won', 'Active')}</div></div>
+          <h3>${E(p.title)}</h3><p>${E(p.description || '')}</p>
+          <div class="promo-meta"><span class="mono">${E(p.code)}</span><small>${p.expires ? 'Until ' + E(IKL.fmtDate(p.expires, false)) : 'No expiry'}${p.featured ? ' · on homepage' : ''}</small></div>
+          <div class="ic-actions"><button class="btn btn-ghost btn-sm" data-share="${E(p.id)}">${icon('mail', '', 15)} Send to subscribers</button><span class="grow"></span><button class="sq-btn" data-edit="${E(p.id)}" aria-label="Edit">${icon('edit', '', 16)}</button><button class="sq-btn danger" data-del="${E(p.id)}" aria-label="Delete">${icon('trash', '', 16)}</button></div>
+        </div>`).join('') || `<div class="card empty">${icon('tag', '', 32)}<p>No promotions yet.</p></div>`}</div>
+      <form id="mkForm" novalidate>
+        <div class="card form-section"><div class="card-head"><div><h3>Top banner</h3><p class="help">The announcement strip above the website header.</p></div></div><div class="card-pad">
+          ${fieldHTML({ name: 'bannerEnabled', label: 'Show the banner', type: 'switch', full: true }, m.bannerEnabled)}
+          ${fieldHTML({ name: 'bannerText', label: 'Banner text', full: true }, m.bannerText)}
+        </div></div>
+        <div class="card form-section"><div class="card-head"><div><h3>Discount popup</h3><p class="help">Shown once to new visitors. They enter their email to unlock the code and join your list.</p></div></div><div class="card-pad">
+          ${fieldHTML({ name: 'popupEnabled', label: 'Show the popup', type: 'switch', full: true }, m.popupEnabled)}
+          ${fieldHTML({ name: 'popupTitle', label: 'Popup headline' }, m.popupTitle)}
+          ${fieldHTML({ name: 'popupCode', label: 'Promo code to give', type: 'select', options: promos.map((p) => [p.code, p.code + ' · ' + p.title]) }, m.popupCode)}
+          ${fieldHTML({ name: 'popupText', label: 'Popup message', type: 'textarea', rows: 2, full: true }, m.popupText)}
+          ${fieldHTML({ name: 'popupDelay', label: 'Show after (seconds)', type: 'number' }, m.popupDelay)}
+          <div class="field" style="align-self:end"><button type="button" class="btn btn-ghost" id="previewPopup">${icon('eye', '', 16)} Preview on website</button></div>
+        </div></div>
+        <div class="card form-section"><div class="card-head"><div><h3>Newsletter signup</h3><p class="help">The signup box at the bottom of every page.</p></div></div><div class="card-pad">
+          ${fieldHTML({ name: 'newsletterTitle', label: 'Heading', full: true }, m.newsletterTitle)}
+          ${fieldHTML({ name: 'newsletterText', label: 'Text', type: 'textarea', rows: 2, full: true }, m.newsletterText)}
+        </div></div>
+        <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">${icon('check', '', 17)} Save marketing settings</button></div>
+      </form>`;
+    $('#addPromo', el).onclick = () => formModal({ title: 'New promotion', fields: promoFields, values: { type: 'percent', active: true, featured: true }, saveLabel: 'Create', wide: true, onSave: (v) => savePromo(v) });
+    $$('[data-edit]', el).forEach((b) => (b.onclick = () => formModal({ title: 'Edit promotion', fields: promoFields, values: promos.find((p) => p.id === b.dataset.edit), wide: true, onSave: (v) => savePromo(v, b.dataset.edit) })));
+    $$('[data-del]', el).forEach((b) => (b.onclick = () => confirmDialog('Delete this promotion? The code will stop working.', () => { IKL.update((x) => { x.promos = x.promos.filter((p) => p.id !== b.dataset.del); }); toast('Promotion deleted'); refresh(); })));
+    $$('[data-share]', el).forEach((b) => (b.onclick = () => { composeEmail((D().subscribers || []).map((x) => x.email)); setTimeout(() => { const s = $('#mailForm select[name=promo]'); if (s) { s.value = b.dataset.share; s.dispatchEvent(new Event('change')); } }, 30); }));
+    $('#previewPopup', el).onclick = () => { try { localStorage.removeItem('ikl_popup_seen'); } catch (e) {} window.open('index.html', '_blank'); toast('Popup will appear on the website after the delay'); };
+    $('#mkForm', el).addEventListener('submit', (e) => {
+      e.preventDefault(); const f = e.target;
+      const v = readFields(f, [{ name: 'bannerEnabled', type: 'switch' }, { name: 'bannerText' }, { name: 'popupEnabled', type: 'switch' }, { name: 'popupTitle' }, { name: 'popupCode' }, { name: 'popupText' }, { name: 'popupDelay', type: 'number' }, { name: 'newsletterTitle' }, { name: 'newsletterText' }]);
+      IKL.update((x) => { x.marketing = Object.assign(x.marketing || {}, v); }); toast('Marketing settings saved'); refresh();
+    });
+  };
 
   /* ---------- Pricing ---------- */
   V.pricing = (el) => {

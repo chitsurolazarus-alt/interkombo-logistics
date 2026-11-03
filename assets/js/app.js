@@ -39,6 +39,19 @@
     return o;
   }
   const loadOptions = (sel) => D().pricing.loads.map((l) => `<option value="${E(l.id)}" ${l.id === sel ? 'selected' : ''}>${E(l.label)}</option>`).join('');
+  const IMG = (u, w) => IKL.img(u, w);
+  const isEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e).trim());
+  function addSubscriber(email, name, source) {
+    email = String(email).trim().toLowerCase();
+    let added = false;
+    IKL.update((d) => {
+      d.subscribers = d.subscribers || [];
+      if (!d.subscribers.some((x) => x.email === email)) { d.subscribers.unshift({ id: IKL.uid('s'), createdAt: IKL.now(), email, name: name || '', source }); added = true; }
+    });
+    return added;
+  }
+  function copyText(t, msg) { try { navigator.clipboard.writeText(t); } catch (e) {} toast(msg || 'Copied'); }
+  const promoText = (p) => (p.type === 'percent' ? p.value + '% OFF' : IKL.money(p.value) + ' OFF');
   function stars(n) { let s = ''; for (let i = 0; i < 5; i++) s += icon('star', '', 16).replace('fill="none"', i < n ? 'fill="currentColor"' : 'fill="none"'); return s; }
 
   /* ---------- shell ---------- */
@@ -53,9 +66,24 @@
       <div class="drawer-contact">${icon('clock', '', 16)} ${E(c.hours)}</div>`;
     $('#waFab').href = waHref('Hi Interkombo Logistics, I would like a quote.');
     $('#waFab').innerHTML = icon('whatsapp', '', 30) + '<span class="wa-tip">Chat with us on WhatsApp</span>';
+    const m = d.marketing || {};
+    const bar = $('#promoBar');
+    let barHidden = false; try { barHidden = sessionStorage.getItem('ikl_bar_closed') === m.bannerText; } catch (e) {}
+    if (m.bannerEnabled && m.bannerText && !barHidden) {
+      bar.hidden = false;
+      bar.innerHTML = `<div class="container promo-inner"><span class="promo-ico">${icon('tag', '', 16)}</span><a href="#/quote">${E(m.bannerText)} <b>Get a quote ${icon('arrow', '', 14)}</b></a><button aria-label="Close offer" id="barClose">${icon('x', '', 16)}</button></div>`;
+      $('#barClose').onclick = () => { bar.hidden = true; try { sessionStorage.setItem('ikl_bar_closed', m.bannerText); } catch (e) {} };
+    } else bar.hidden = true;
     const social = [['facebook', c.facebook], ['instagram', c.instagram], ['linkedin', c.linkedin]].filter((s) => s[1]);
     $('#footer').innerHTML = `
       <div class="container">
+        <div class="newsletter">
+          <div class="nl-copy"><span class="nl-ico">${icon('mail', '', 24)}</span><div><h3>${E(m.newsletterTitle || 'Newsletter')}</h3><p>${E(m.newsletterText || '')}</p></div></div>
+          <form class="nl-form" id="nlForm" novalidate>
+            <input class="input" type="email" name="email" placeholder="Your email address" autocomplete="email" aria-label="Email address">
+            <button class="btn btn-primary" type="submit">Subscribe ${icon('arrow', '', 17)}</button>
+          </form>
+        </div>
         <div class="footer-grid">
           <div>
             <img class="f-logo" src="assets/img/logo-dark.png" alt="${E(c.name)}">
@@ -80,6 +108,13 @@
         </div>
       </div>`;
     updateThemeIcon();
+    $('#nlForm').addEventListener('submit', (e) => {
+      e.preventDefault(); const f = e.target; const em = f.email.value;
+      if (!isEmail(em)) { f.email.classList.add('invalid'); toast('Please enter a valid email address'); return; }
+      f.email.classList.remove('invalid');
+      const added = addSubscriber(em, '', 'Newsletter'); f.reset();
+      toast(added ? 'You’re subscribed! Watch your inbox for deals.' : 'You’re already on our list. Thank you!');
+    });
   }
   function updateThemeIcon() {
     const dark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -109,6 +144,7 @@
           </div>
         </div>
         <div class="hero-visual reveal d2">
+          ${h.image ? `<div class="hero-photo"><img src="${E(IMG(h.image, 1100))}" alt="Interkombo truck on the road" fetchpriority="high"></div>` : ''}
           <div class="float-chip c1"><span class="dot-ico">${icon('truck', '', 18)}</span><div><b>On the road</b><small>Pretoria → Harare</small></div></div>
           <div class="qq-card">
             <div class="qq-head">
@@ -150,7 +186,8 @@
         ${withHead ? `<div class="section-head reveal"><span class="eyebrow">What we do</span><h2 class="h2">Logistics services built around you</h2><p class="lead">From one box to a full truck load, across town or across the border, we have the vehicle, the crew and the experience.</p></div>` : ''}
         <div class="services-grid">
           ${d.services.map((s, i) => `
-            <a class="service-card reveal d${(i % 3) + 1}" href="#/services/${E(s.id)}">
+            <a class="service-card ${s.image ? 'has-img' : ''} reveal d${(i % 3) + 1}" href="#/services/${E(s.id)}">
+              ${s.image ? `<div class="svc-img"><img src="${E(IMG(s.image, 700))}" alt="${E(s.title)}" loading="lazy"></div>` : ''}
               <div class="svc-ico">${icon(s.icon, '', 26)}</div>
               <h3>${E(s.title)}</h3>
               <p>${E(s.short)}</p>
@@ -188,6 +225,27 @@
     </section>`;
   }
 
+  function dealsSection() {
+    const list = (D().promos || []).filter((p) => p.active && p.featured && !(p.expires && new Date(p.expires + 'T23:59:59') < new Date()));
+    if (!list.length) return '';
+    return `
+    <section class="section" id="deals">
+      <div class="container">
+        <div class="section-head reveal"><span class="eyebrow">Specials & promotions</span><h2 class="h2">Save on your next move</h2><p class="lead">Use these codes in our quote calculator. The discount is applied to your estimate instantly.</p></div>
+        <div class="deals-grid">
+          ${list.map((p, i) => `
+            <div class="coupon reveal d${(i % 3) + 1}">
+              <div class="cp-left"><b>${E(promoText(p))}</b><span>${p.expires ? 'Valid until ' + E(IKL.fmtDate(p.expires, false)) : 'Limited time'}</span></div>
+              <div class="cp-right">
+                <h3>${E(p.title)}</h3><p>${E(p.description)}</p>
+                <div class="cp-actions"><button class="cp-code" data-code="${E(p.code)}" aria-label="Copy code ${E(p.code)}">${E(p.code)} ${icon('copy', '', 15)}</button><a href="#/quote?promo=${encodeURIComponent(p.code)}" class="svc-link">Use code ${icon('arrow', '', 15)}</a></div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </section>`;
+  }
+
   function crossBorderSection(withHead = true) {
     const cb = D().crossBorder;
     return `
@@ -199,6 +257,7 @@
             ${cb.countries.map((c, i) => `<div class="country reveal d${(i % 4) + 1}"><span class="flag">${E(c.flag)}</span><div><b>${E(c.name)}</b><small>${E(c.border)}</small></div><span class="time">${E(c.time)}</span></div>`).join('')}
           </div>
           <div class="docs-card reveal d2">
+            ${D().media && D().media.crossBorder ? `<div class="docs-img"><img src="${E(IMG(D().media.crossBorder, 800))}" alt="Shipping containers" loading="lazy"></div>` : ''}
             <h3>${icon('file', '', 22)} Documents checklist</h3>
             <p style="color:var(--text-2);margin:0">Have these ready to help your load clear customs quickly:</p>
             <ul class="check-list">${cb.documents.map((x) => `<li>${icon('checkCircle', '', 18)}<span>${E(x)}</span></li>`).join('')}</ul>
@@ -222,6 +281,7 @@
     <section class="section section-alt">
       <div class="container why-grid">
         <div class="why-visual reveal">
+          ${D().media && D().media.why ? `<img class="why-bg" src="${E(IMG(D().media.why, 1000))}" alt="" loading="lazy">` : ''}
           <img class="mark" src="assets/img/mark.png" alt="">
           <h3>One partner for every move, from the first box to the final signature.</h3>
           <div class="route-card">
@@ -281,6 +341,7 @@
     <section class="section" style="padding-bottom:0">
       <div class="container">
         <div class="cta-band reveal">
+          ${D().media && D().media.cta ? `<img class="cta-bg" src="${E(IMG(D().media.cta, 1400))}" alt="" loading="lazy">` : ''}
           <div><h2>Ready to move? Let’s get you a price.</h2><p>Instant online estimate, or chat to our team on WhatsApp right now.</p></div>
           <div class="ctas">
             <a href="#/quote" class="btn btn-white btn-lg">${icon('zap', '', 18)} Get a quote</a>
@@ -305,7 +366,7 @@
 
   /* ---------- pages ---------- */
   function pageHome() {
-    main.innerHTML = heroSection() + servicesSection() + stepsSection() + statsSection() + crossBorderSection() + whySection() + testimonialsSection() + faqSection() + ctaSection();
+    main.innerHTML = heroSection() + servicesSection() + stepsSection() + statsSection() + dealsSection() + crossBorderSection() + whySection() + testimonialsSection() + faqSection() + ctaSection();
     bindQuickQuote();
     bindStripTrack();
   }
@@ -323,6 +384,7 @@
         <div class="container svc-detail">
           <div>
             <div class="content reveal">
+              ${s.image ? `<div class="detail-img"><img src="${E(IMG(s.image, 1200))}" alt="${E(s.title)}"></div>` : ''}
               <div class="svc-ico" style="background:var(--grad);color:#fff">${icon(s.icon, '', 26)}</div>
               <h2 style="font-size:1.6rem">About this service</h2>
               <p>${E(s.description)}</p>
@@ -362,6 +424,7 @@
             <div class="values">${(a.values || []).map((v) => `<span>${icon('check', '', 16)}${E(v)}</span>`).join('')}</div>
           </div>
           <div class="mv-cards">
+            ${a.image ? `<div class="about-img reveal"><img src="${E(IMG(a.image, 900))}" alt="Interkombo team moving boxes" loading="lazy"></div>` : ''}
             <div class="mv reveal d1"><div class="f-ico">${icon('flag', '', 22)}</div><div><h3>Our mission</h3><p>${E(a.mission)}</p></div></div>
             <div class="mv alt reveal d2"><div class="f-ico">${icon('eye', '', 22)}</div><div><h3>Our vision</h3><p>${E(a.vision)}</p></div></div>
           </div>
@@ -475,8 +538,9 @@
     const svc = SERVICE_IDS().includes(params.get('service')) ? params.get('service') : '';
     const q = {
       step: 1, service: svc, from: params.get('from') || '', to: params.get('to') || '', date: '',
-      load: params.get('load') || '', extras: [], name: '', phone: '', email: '', notes: ''
+      load: params.get('load') || '', extras: [], name: '', phone: '', email: '', notes: '', promo: '', promoInput: params.get('promo') || '', subscribe: true
     };
+    if (q.promoInput && IKL.findPromo(q.promoInput)) q.promo = q.promoInput.toUpperCase();
     if (svc === 'cross-border' && !q.to) q.to = '';
     main.innerHTML = `
       ${pageHero('Get an <span class="grad-text">instant quote</span>', 'Answer a few quick questions and see your estimate update live. No obligation.', 'Quote')}
@@ -498,7 +562,7 @@
     function drawSteps() {
       $('#wizSteps').innerHTML = STEP_NAMES.map((n, i) => `<div class="wiz-step ${i + 1 === q.step ? 'active' : ''} ${i + 1 < q.step ? 'done' : ''}"><i>${i + 1 < q.step ? icon('check', '', 14) : i + 1}</i><span>${n}</span></div>`).join('');
       $('#wizBack').style.visibility = q.step === 1 ? 'hidden' : 'visible';
-      $('#wizNext').innerHTML = q.step === 4 ? `Submit quote request ${icon('check', '', 18)}` : `Continue ${icon('arrow', '', 18)}`;
+      $('#wizNext').innerHTML = q.step === 4 ? `Submit request ${icon('check', '', 18)}` : `Continue ${icon('arrow', '', 18)}`;
     }
     function drawBody() {
       const b = $('#wizBody');
@@ -521,6 +585,7 @@
             <label class="choice ${q.load === l.id ? 'on' : ''}"><input type="radio" name="load" value="${E(l.id)}" ${q.load === l.id ? 'checked' : ''}>
               <span class="tick">${icon('check', '', 13)}</span><span class="c-ico">${icon(l.vehicle === 'bakkie' ? 'box' : l.id === 'office' ? 'building' : l.id === 'freight' ? 'package' : 'home', '', 22)}</span><b>${E(l.label)}</b><small>${E(v.name || '')}</small></label>`; }).join('')}</div>
           <h3 style="font-size:1.1rem;margin:1.75rem 0 .3rem">Optional extras</h3><p class="sub" style="margin-bottom:1rem;color:var(--muted)">Add any services you’d like included.</p>
+          ${q.promo ? `<div class="cb-note">${icon('tag', '', 18)}<span>Promo <b>${E(q.promo)}</b> will be applied to your estimate.</span></div>` : ''}
           <div class="choice-grid two">${d.pricing.extras.map((x) => `
             <label class="choice ${q.extras.includes(x.id) ? 'on' : ''}"><input type="checkbox" name="extras" value="${E(x.id)}" ${q.extras.includes(x.id) ? 'checked' : ''}>
               <span class="tick">${icon('check', '', 13)}</span><b>${E(x.label)}</b><span class="price">+ ${IKL.money(x.price)}</span></label>`).join('')}</div>`;
@@ -531,6 +596,11 @@
             <label class="field"><span>Phone / WhatsApp *</span><input class="input" name="phone" type="tel" inputmode="tel" value="${E(q.phone)}" autocomplete="tel"></label>
             <label class="field full"><span>Email</span><input class="input" name="email" type="email" value="${E(q.email)}" autocomplete="email"></label>
             <label class="field full"><span>Anything we should know?</span><textarea class="textarea" name="notes" placeholder="Stairs, large items like a piano, access restrictions…">${E(q.notes)}</textarea></label>
+            <div class="field full"><span>Promo code</span>
+              <div class="promo-row"><input class="input" name="promoInput" value="${E(q.promo || q.promoInput)}" placeholder="e.g. MOVE10" autocapitalize="characters" autocomplete="off"><button type="button" class="btn btn-ghost" id="applyPromo">Apply</button></div>
+              <small class="promo-msg ${q.promo ? 'ok' : ''}" id="promoMsg">${q.promo ? icon('checkCircle', '', 15) + ' Code ' + E(q.promo) + ' applied' : ''}</small>
+            </div>
+            <label class="switch full"><input type="checkbox" name="subscribe" ${q.subscribe ? 'checked' : ''}><span class="tr"></span>Send me moving tips and exclusive deals by email</label>
           </div>`;
       }
       b.classList.remove('page-enter'); void b.offsetWidth; b.classList.add('page-enter');
@@ -543,7 +613,7 @@
     }
     function drawSummary() {
       const ready = q.from && q.to && q.from !== q.to;
-      const est = ready ? IKL.estimate(d, { from: q.from, to: q.to, load: q.load || 'bed1', extras: q.extras }) : null;
+      const est = ready ? IKL.estimate(d, { from: q.from, to: q.to, load: q.load || 'bed1', extras: q.extras, promo: q.promo }) : null;
       const svc = d.services.find((s) => s.id === q.service);
       $('#summary').innerHTML = `
         <div class="summary-top"><small>Estimated cost</small>
@@ -553,7 +623,7 @@
         <div class="summary-body">
           ${svc ? `<p style="margin:0 0 1rem;font-weight:600;display:flex;gap:.5rem;align-items:center">${icon(svc.icon, '', 18)} ${E(svc.title)}</p>` : ''}
           ${ready ? `<div class="sum-route"><span class="dot"></span><div><span>${E(q.from)}</span></div><span class="vline"></span><span></span><span class="dot end"></span><div><span>${E(q.to)}</span><small>≈ ${est.km.toLocaleString('en-ZA')} km by road${est.isCross ? ' · cross-border' : ''}</small></div></div>` : ''}
-          ${est ? `<ul class="lines">${est.lines.map((l) => `<li><span>${E(l.label)}</span><b>${IKL.money(l.amount)}</b></li>`).join('')}<li class="total"><span>Estimate</span><b>${IKL.money(est.total)}</b></li></ul>
+          ${est ? `<ul class="lines">${est.lines.map((l) => `<li class="${l.promo ? 'disc' : ''}"><span>${l.promo ? icon('tag', '', 14) + ' ' : ''}${E(l.label)}</span><b>${IKL.money(l.amount)}</b></li>`).join('')}<li class="total"><span>Estimate</span><b>${IKL.money(est.total)}</b></li></ul>
             ${!q.load ? `<p class="disclaimer" style="margin-bottom:.75rem">${icon('help', '', 16)} Based on a 1-bedroom load until you choose a size.</p>` : ''}` : `<p class="empty-sum">${icon('route', '', 28)}<br>Your price breakdown will appear here.</p>`}
           <p class="disclaimer">${icon('shield', '', 16)} Estimates are a guide. Your final price is confirmed after a quick call or video survey.</p>
         </div>`;
@@ -565,7 +635,7 @@
       if (q.step === 1) { const r = f.querySelector('input[name=service]:checked'); if (r) q.service = r.value; }
       if (q.step === 2) { q.from = f.from.value; q.to = f.to.value; q.date = f.date.value; }
       if (q.step === 3) { const r = f.querySelector('input[name=load]:checked'); if (r) q.load = r.value; q.extras = $$('input[name=extras]:checked', f).map((x) => x.value); }
-      if (q.step === 4) { ['name', 'phone', 'email', 'notes'].forEach((k) => (q[k] = f.elements[k].value)); }
+      if (q.step === 4) { ['name', 'phone', 'email', 'notes', 'promoInput'].forEach((k) => (q[k] = f.elements[k].value)); q.subscribe = f.elements.subscribe.checked; }
     }
     function validate() {
       const f = $('#wizForm');
@@ -591,6 +661,17 @@
       if (q.step === 1 && e.target.name === 'service') setTimeout(() => $('#wizForm').requestSubmit(), 220);
     });
     $('#wizForm').addEventListener('input', (e) => { if (q.step === 4) { read(); e.target.classList.remove('invalid'); } });
+    $('#wizForm').addEventListener('click', (e) => {
+      if (!e.target.closest('#applyPromo')) return;
+      read();
+      const code = String(q.promoInput || '').trim().toUpperCase(); const msg = $('#promoMsg');
+      if (!code) { q.promo = ''; msg.className = 'promo-msg'; msg.textContent = ''; drawSummary(); return; }
+      const p = IKL.findPromo(code);
+      if (p) { q.promo = p.code.toUpperCase(); msg.className = 'promo-msg ok'; msg.innerHTML = icon('checkCircle', '', 15) + ' ' + E(p.title) + ' applied'; toast('Promo code applied'); }
+      else { q.promo = ''; msg.className = 'promo-msg bad'; msg.textContent = 'That code is not valid or has expired.'; }
+      drawSummary();
+    });
+    $('#wizForm').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.name === 'promoInput') { e.preventDefault(); $('#applyPromo').click(); } });
     $('#wizBack').addEventListener('click', () => { read(); if (q.step > 1) { q.step--; drawSteps(); drawBody(); drawSummary(); scrollToWizard(); } });
     $('#wizForm').addEventListener('submit', (e) => {
       e.preventDefault(); read();
@@ -611,10 +692,11 @@
     IKL.update((data) => data.quotes.unshift({
       id: ref, createdAt: IKL.now(), status: 'new', service: svc ? svc.title : q.service, from: q.from, to: q.to, date: q.date,
       load: est.load.label, vehicle: est.vehicle.name, extras: extrasLabels, distance: est.km, estimate: est.total,
-      name: q.name.trim(), phone: q.phone.trim(), email: q.email.trim(), notes: q.notes.trim()
+      name: q.name.trim(), phone: q.phone.trim(), email: q.email.trim(), notes: q.notes.trim(), promo: est.promo ? est.promo.code : '', discount: est.discount || 0
     }));
+    if (q.subscribe && isEmail(q.email)) addSubscriber(q.email, q.name.trim(), 'Quote form');
     cleanupQuote();
-    const msg = `Hi Interkombo Logistics, I just requested a quote (${ref}).\n${svc ? svc.title : ''}: ${q.from} → ${q.to}\nLoad: ${est.load.label}${q.date ? '\nDate: ' + q.date : ''}\nEstimate: ${IKL.money(est.total)}\nName: ${q.name}`;
+    const msg = `Hi Interkombo Logistics, I just requested a quote (${ref}).\n${svc ? svc.title : ''}: ${q.from} → ${q.to}\nLoad: ${est.load.label}${q.date ? '\nDate: ' + q.date : ''}\nEstimate: ${IKL.money(est.total)}${est.promo ? ' (promo ' + est.promo.code + ')' : ''}\nName: ${q.name}`;
     main.innerHTML = `
       ${pageHero('Quote <span class="grad-text">received</span>', '', 'Quote')}
       <section class="section" style="padding-top:0">
@@ -702,10 +784,65 @@
     else page404();
     renderShell();
     bindFAQ(); bindReveal();
+    $$('.cp-code').forEach((b) => (b.onclick = () => copyText(b.dataset.code, 'Code ' + b.dataset.code + ' copied')));
+    $$('img').forEach((im) => { im.addEventListener('error', () => { const w = im.closest('.svc-img, .hero-photo, .about-img, .detail-img, .docs-img'); if (w) w.remove(); else im.remove(); }, { once: true }); });
     main.classList.remove('page-enter'); void main.offsetWidth; main.classList.add('page-enter');
     const titles = { '': 'Removals, Relocation & Cross-Border Freight', services: 'Services', quote: 'Instant Quote', track: 'Track Shipment', 'cross-border': 'Cross-Border Freight', about: 'About Us', contact: 'Contact' };
     document.title = 'Interkombo Logistics | ' + (titles[p] || 'Page');
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  }
+
+  /* ---------- discount popup ---------- */
+  function schedulePopup() {
+    const m = D().marketing || {};
+    if (!m.popupEnabled) return;
+    let seen = false; try { seen = localStorage.getItem('ikl_popup_seen') === '1'; } catch (e) {}
+    if (seen) return;
+    setTimeout(() => {
+      const p = parseHash().parts[0] || '';
+      if (p === 'quote' || document.body.classList.contains('drawer-open') || $('#popupRoot').children.length) return;
+      showPopup();
+    }, Math.max(2, Number(m.popupDelay) || 8) * 1000);
+  }
+  function showPopup() {
+    const m = D().marketing || {};
+    const promo = IKL.findPromo(m.popupCode);
+    try { localStorage.setItem('ikl_popup_seen', '1'); } catch (e) {}
+    const root = $('#popupRoot');
+    root.innerHTML = `
+      <div class="pop-wrap" role="dialog" aria-modal="true" aria-label="${E(m.popupTitle)}">
+        <div class="pop-bg"></div>
+        <div class="pop">
+          <button class="pop-x" aria-label="Close">${icon('x', '', 20)}</button>
+          <div class="pop-top">${D().hero.image ? `<img src="${E(IMG(D().hero.image, 800))}" alt="" onerror="this.remove()">` : ''}<span class="pop-badge">${promo ? E(promoText(promo)) : 'EXCLUSIVE'}</span></div>
+          <div class="pop-body" id="popBody">
+            <h3>${E(m.popupTitle)}</h3>
+            <p>${E(m.popupText)}</p>
+            <form id="popForm" novalidate>
+              <input class="input" name="name" placeholder="First name (optional)" autocomplete="given-name">
+              <input class="input" name="email" type="email" placeholder="Your email address" autocomplete="email" required>
+              <button class="btn btn-primary btn-lg btn-block" type="submit">Unlock my discount ${icon('arrow', '', 18)}</button>
+            </form>
+            <button class="pop-skip" type="button">No thanks</button>
+          </div>
+        </div>
+      </div>`;
+    const close = () => { root.innerHTML = ''; document.body.style.overflow = ''; };
+    document.body.style.overflow = 'hidden';
+    $('.pop-x', root).onclick = close; $('.pop-bg', root).onclick = close; $('.pop-skip', root).onclick = close;
+    $('#popForm').addEventListener('submit', (e) => {
+      e.preventDefault(); const f = e.target;
+      if (!isEmail(f.email.value)) { f.email.classList.add('invalid'); toast('Please enter a valid email address'); return; }
+      addSubscriber(f.email.value, f.name.value.trim(), 'Discount popup');
+      const code = promo ? promo.code : m.popupCode;
+      $('#popBody').innerHTML = `<div class="success-ico" style="width:64px;height:64px;margin-bottom:1rem">${icon('check', '', 32)}</div><h3>You’re in! Here’s your code:</h3>
+        <div class="ref-box" style="margin:.75rem 0 1.25rem">${E(code)} <button type="button" id="popCopy" aria-label="Copy code">${icon('copy', '', 18)}</button></div>
+        <p>Use it on your quote. We’ve also added you to our mailing list.</p>
+        <a class="btn btn-primary btn-lg btn-block" href="#/quote?promo=${encodeURIComponent(code)}" id="popUse">Use it now ${icon('arrow', '', 18)}</a>`;
+      $('#popCopy').onclick = () => copyText(code, 'Code copied');
+      $('#popUse').onclick = close;
+    });
+    document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
   }
 
   /* ---------- global UI ---------- */
@@ -724,6 +861,7 @@
   addEventListener('scroll', onScroll, { passive: true }); onScroll();
   addEventListener('hashchange', route);
   // Live-refresh when admin edits content in another tab (skip on quote page so in-progress forms aren't lost)
-  IKL.onChange(() => { const p = parseHash().parts[0] || ''; if (!['quote', 'contact', 'track'].includes(p)) route(); else renderShell(); });
+  IKL.onChange((d, external) => { if (!external) return; const p = parseHash().parts[0] || ''; if (!['quote', 'contact', 'track'].includes(p)) route(); else renderShell(); });
   route();
+  schedulePopup();
 })();

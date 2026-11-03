@@ -16,7 +16,7 @@
       name: 'Interkombo Logistics',
       tagline: 'Removals, relocations & freight — across South Africa and beyond.',
       phone: '076 095 0954',
-      whatsapp: '27760950954',
+      whatsapp: '27624821827',
       email: 'lazaruschitsuro@lcdigitalsolution.co.za',
       address: 'Pretoria, Gauteng, South Africa',
       hours: 'Mon – Sat: 07:00 – 18:00 · Emergency moves 24/7',
@@ -29,6 +29,7 @@
       eyebrow: 'South Africa · SADC cross-border',
       title: 'Moving your world,',
       highlight: 'safely and on time.',
+      image: 'https://images.unsplash.com/photo-1746985106190-6c116edec9bc?auto=format&fit=crop&w=1400&q=75',
       subtitle: 'Household removals, office relocations and freight transport across all 9 provinces and into neighbouring countries. You get one team, clear pricing and live tracking.'
     },
     stats: [
@@ -42,25 +43,31 @@
       body: 'Interkombo Logistics was founded to make moving and freight simple, transparent and stress-free. Whether it is a family relocating to a new city, a business moving offices over a weekend, or a supplier sending stock across the border, we plan every load carefully, handle it with care and keep you updated from collection to delivery.',
       mission: 'To deliver reliable, affordable and transparent logistics that help people and businesses move forward.',
       vision: 'To be Southern Africa’s most trusted name in removals and cross-border transport.',
-      values: ['Reliability', 'Care', 'Transparency', 'Safety', 'Speed']
+      values: ['Reliability', 'Care', 'Transparency', 'Safety', 'Speed'],
+      image: 'https://images.unsplash.com/photo-1543499459-d1460946bdc6?auto=format&fit=crop&w=1400&q=75'
+    },
+    media: {
+      why: 'https://images.unsplash.com/photo-1580674285054-bed31e145f59?auto=format&fit=crop&w=1400&q=75',
+      cta: 'https://images.unsplash.com/photo-1682033239487-30f076c82232?auto=format&fit=crop&w=1400&q=75',
+      crossBorder: 'https://images.unsplash.com/photo-1605732562742-3023a888e56e?auto=format&fit=crop&w=1400&q=75'
     },
     services: [
-      { id: 'removals', icon: 'home', title: 'Home Removals', short: 'Stress-free household moves, packed, loaded and delivered with care.',
+      { id: 'removals', image: 'https://images.unsplash.com/photo-1758523671285-9ff3f4e0ff38?auto=format&fit=crop&w=1400&q=75', icon: 'home', title: 'Home Removals', short: 'Stress-free household moves, packed, loaded and delivered with care.',
         description: 'From a single room to a full family home, our trained crew wraps, loads, transports and places every item where you want it. We supply blankets, wrapping and boxes so nothing arrives damaged.',
         features: ['Professional packing & wrapping', 'Furniture dismantling & assembly', 'Fragile & high-value item handling', 'Same-day local moves'] },
-      { id: 'relocation', icon: 'building', title: 'Office & Corporate Relocation', short: 'Move your business with minimal downtime, even over a weekend.',
+      { id: 'relocation', image: 'https://images.unsplash.com/photo-1577412647305-991150c7d163?auto=format&fit=crop&w=1400&q=75', icon: 'building', title: 'Office & Corporate Relocation', short: 'Move your business with minimal downtime, even over a weekend.',
         description: 'We plan office moves around your operations: labelled crates, IT equipment handling and after-hours or weekend moves so your team is working on Monday morning.',
         features: ['After-hours & weekend moves', 'IT & server equipment care', 'Labelled crate system', 'Dedicated move coordinator'] },
-      { id: 'freight', icon: 'truck', title: 'Goods Transportation', short: 'Reliable freight for suppliers, retailers and contractors.',
+      { id: 'freight', image: 'https://images.unsplash.com/photo-1720811559371-7b0ebd219127?auto=format&fit=crop&w=1400&q=75', icon: 'truck', title: 'Goods Transportation', short: 'Reliable freight for suppliers, retailers and contractors.',
         description: 'Full-load and part-load transport for stock, building materials, equipment and palletised goods, from 1-ton bakkies to 14-ton trucks.',
         features: ['Full & part loads (FTL / LTL)', 'Palletised & bulk goods', 'Construction material delivery', 'Scheduled contract runs'] },
-      { id: 'cross-border', icon: 'globe', title: 'Cross-Border Freight', short: 'Door-to-door into Zimbabwe, Botswana, Mozambique and more.',
+      { id: 'cross-border', image: 'https://images.unsplash.com/photo-1728995848808-2cbb5a891837?auto=format&fit=crop&w=1400&q=75', icon: 'globe', title: 'Cross-Border Freight', short: 'Door-to-door into Zimbabwe, Botswana, Mozambique and more.',
         description: 'We handle the paperwork, the border and the road. Our team helps with customs documentation and clearing so your goods move through Beitbridge, Groblersdorp, Lebombo and other posts without surprises.',
         features: ['Customs documentation support', 'Clearing agent coordination', 'Border status updates', 'Household & commercial loads'] },
-      { id: 'national', icon: 'route', title: 'Nationwide Delivery', short: 'Long-distance delivery between every major SA city.',
+      { id: 'national', image: 'https://images.unsplash.com/photo-1586037856547-c2a6dc6f4380?auto=format&fit=crop&w=1400&q=75', icon: 'route', title: 'Nationwide Delivery', short: 'Long-distance delivery between every major SA city.',
         description: 'Scheduled and dedicated long-distance runs connecting Gauteng, the Western Cape, KwaZulu-Natal, Limpopo and every province in between.',
         features: ['All 9 provinces', 'Dedicated or shared loads', 'Live tracking & ETAs', 'Proof of delivery'] },
-      { id: 'storage', icon: 'box', title: 'Packing & Storage', short: 'Secure short and long-term storage between moves.',
+      { id: 'storage', image: 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=1400&q=75', icon: 'box', title: 'Packing & Storage', short: 'Secure short and long-term storage between moves.',
         description: 'Need a place for your goods between homes, or while you renovate? We pack, collect and store your items securely until you are ready.',
         features: ['Packing materials supplied', 'Short & long-term storage', 'Inventory list for every load', 'Collect & redeliver on request'] }
     ],
@@ -153,6 +160,26 @@
     messages: [
       { id: 'm1', createdAt: daysAgo(0, 5), read: false, name: 'Naledi K.', email: 'naledi@example.com', phone: '073 000 0000', subject: 'Storage enquiry', message: 'Hi, do you offer storage for 3 months between moves?' }
     ],
+    subscribers: [
+      { id: 's1', createdAt: daysAgo(1, 3), email: 'thabo@example.com', name: 'Thabo', source: 'Newsletter' },
+      { id: 's2', createdAt: daysAgo(0, 6), email: 'grace@example.com', name: '', source: 'Discount popup' }
+    ],
+    promos: [
+      { id: 'p1', code: 'MOVE10', type: 'percent', value: 10, title: '10% off your first move', description: 'New customers save 10% on any home removal or relocation.', expires: '', active: true, featured: true },
+      { id: 'p2', code: 'BORDER500', type: 'fixed', value: 500, title: 'R500 off cross-border', description: 'Save R500 on any cross-border move into SADC.', expires: '', active: true, featured: true },
+      { id: 'p3', code: 'MIDWEEK15', type: 'percent', value: 15, title: '15% off midweek moves', description: 'Book a Tuesday–Thursday local move and save 15%.', expires: '', active: true, featured: true }
+    ],
+    marketing: {
+      bannerEnabled: true,
+      bannerText: 'Launch special: get 10% off your first move with code MOVE10',
+      popupEnabled: true,
+      popupTitle: 'Get 10% off your first move',
+      popupText: 'Join our newsletter for moving tips and exclusive deals, and unlock your discount code instantly.',
+      popupCode: 'MOVE10',
+      popupDelay: 8,
+      newsletterTitle: 'Moving tips & exclusive deals',
+      newsletterText: 'Join our mailing list for promotions, discount codes and helpful moving checklists. No spam, unsubscribe anytime.'
+    },
     admin: { username: 'admin', password: 'interkombo2026' }
   };
 
@@ -210,7 +237,14 @@
     (input.extras || []).forEach((id) => { const e = pr.extras.find((x) => x.id === id); if (e) lines.push({ label: e.label, amount: e.price }); });
     let total = lines.reduce((s, l) => s + Number(l.amount || 0), 0);
     total = Math.max(total, pr.minCharge);
-    return { km, isCross, vehicle, load, lines, total, low: Math.round(total * 0.92 / 10) * 10, high: Math.round(total * 1.08 / 10) * 10 };
+    const promo = findPromo(data, input.promo);
+    let discount = 0;
+    if (promo) {
+      discount = promo.type === 'percent' ? Math.round(total * Number(promo.value) / 100) : Math.min(total, Number(promo.value));
+      lines.push({ label: `Promo ${promo.code}`, amount: -discount, promo: true });
+      total = total - discount;
+    }
+    return { km, isCross, vehicle, load, lines, total, promo, discount, low: Math.round(total * 0.92 / 10) * 10, high: Math.round(total * 1.08 / 10) * 10 };
   }
 
   const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -224,6 +258,7 @@
         const parsed = JSON.parse(raw);
         // fill in any keys added in newer versions
         cache = Object.assign(clone(DEFAULTS), parsed);
+        migrate(cache);
         return cache;
       }
     } catch (e) { /* storage unavailable */ }
@@ -231,14 +266,34 @@
     return cache;
   }
 
+  // Bring older saved data up to date with new defaults
+  function migrate(d) {
+    if (d.company && d.company.whatsapp === '27760950954') d.company.whatsapp = DEFAULTS.company.whatsapp;
+    if (d.hero && !d.hero.image) d.hero.image = DEFAULTS.hero.image;
+    if (d.about && !d.about.image) d.about.image = DEFAULTS.about.image;
+    d.media = Object.assign(clone(DEFAULTS.media), d.media || {});
+    d.marketing = Object.assign(clone(DEFAULTS.marketing), d.marketing || {});
+    (d.services || []).forEach((sv) => { if (!sv.image) { const def = DEFAULTS.services.find((x) => x.id === sv.id); sv.image = def ? def.image : ''; } });
+    d.version = 2;
+  }
+
+  function findPromo(data, code) {
+    if (!code) return null;
+    const c = String(code).trim().toUpperCase();
+    const p = (data.promos || []).find((x) => String(x.code).toUpperCase() === c);
+    if (!p || !p.active) return null;
+    if (p.expires && new Date(p.expires + 'T23:59:59') < new Date()) return null;
+    return p;
+  }
+
   const listeners = [];
   function persist() {
     try { localStorage.setItem(KEY, JSON.stringify(cache)); } catch (e) { /* ignore */ }
-    listeners.forEach((fn) => fn(cache));
+    listeners.forEach((fn) => fn(cache, false));
   }
 
   window.addEventListener('storage', (e) => {
-    if (e.key === KEY) { cache = null; const d = load(); listeners.forEach((fn) => fn(d)); }
+    if (e.key === KEY) { cache = null; const d = load(); listeners.forEach((fn) => fn(d, true)); }
   });
 
   window.IKL = {
@@ -247,11 +302,12 @@
     save: (d) => { cache = d; persist(); },
     update: (fn) => { const d = load(); fn(d); persist(); return d; },
     reset: () => { cache = clone(DEFAULTS); persist(); },
+    img: (url, w) => (url && /images\.unsplash\.com/.test(url) && w ? url.replace(/w=\d+/, 'w=' + w) : url || ''),
     onChange: (fn) => listeners.push(fn),
     exportJSON: () => JSON.stringify(load(), null, 2),
-    importJSON: (txt) => { const d = JSON.parse(txt); cache = Object.assign(clone(DEFAULTS), d); persist(); },
-    distanceKm, estimate,
-    money: (n) => 'R' + Math.round(Number(n) || 0).toLocaleString('en-ZA').replace(/,/g, ' '),
+    importJSON: (txt) => { const d = JSON.parse(txt); cache = Object.assign(clone(DEFAULTS), d); migrate(cache); persist(); },
+    distanceKm, estimate, findPromo: (code) => findPromo(load(), code),
+    money: (n) => (Number(n) < 0 ? '−R' : 'R') + Math.abs(Math.round(Number(n) || 0)).toLocaleString('en-ZA').replace(/,/g, ' '),
     nextRef: (prefix, list) => {
       const nums = list.map((x) => parseInt(String(x.id).split('-')[1], 10)).filter((n) => !isNaN(n));
       const base = prefix === 'IKQ' ? 10400 : 100000;
