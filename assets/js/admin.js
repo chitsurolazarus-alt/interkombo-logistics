@@ -769,7 +769,7 @@
           ${fieldHTML({ name: 'password2', label: 'Confirm new password', type: 'password' }, '')}
           <div class="full"><button class="btn btn-brand" type="submit">${icon('lock', '', 17)} Change password</button></div>
         </form></div>
-      <div class="card form-section"><div class="card-head"><div><h3>Admins</h3><p class="help">People who can sign in to this dashboard. To add someone: they first tap “Create the admin account” on the login page with their email, then you add that email here.</p></div></div>
+      <div class="card form-section"><div class="card-head"><div><h3>Admins</h3><p class="help">People who can sign in to this dashboard. To add someone: they first tap “Need access? Create an account” on the login page with their email, then you add that email here.</p></div></div>
         <div class="card-pad"><div class="full" id="adminList"><p class="help">Loading…</p></div>
           <form class="full" id="addAdminForm" style="display:flex;gap:.6rem;flex-wrap:wrap" novalidate><input class="input" name="email" type="email" placeholder="their@email.com" style="flex:1 1 220px"><button class="btn btn-ghost" type="submit">${icon('plus', '', 17)} Add admin</button></form>
         </div></div>
