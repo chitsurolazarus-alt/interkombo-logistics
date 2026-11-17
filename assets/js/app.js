@@ -104,7 +104,7 @@
         </div>
         <div class="footer-bottom">
           <span>© ${new Date().getFullYear()} ${E(c.name)}. All rights reserved.</span>
-          <span>Website by <a href="https://lcdigitalsolution.co.za" target="_blank" rel="noopener">L.C Digital Solution WebCraft Studios</a></span>
+          <span class="fb-right"><a href="admin.html" class="admin-link" title="Admin" aria-label="Admin login">${icon('lock', '', 13)}</a><span>Website by <a href="https://lcdigitalsolution.co.za" target="_blank" rel="noopener">L.C Digital Solution WebCraft Studios</a></span></span>
         </div>
       </div>`;
     updateThemeIcon();

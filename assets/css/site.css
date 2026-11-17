@@ -646,3 +646,6 @@ a.c-card:hover { border-color: var(--orange); transform: translateY(-2px); }
 .pop-body form { display: grid; gap: .65rem; margin-top: 1rem; }
 .pop-skip { background: none; border: 0; color: var(--muted); font-size: .88rem; margin-top: .75rem; padding: .4rem; }
 .pop-skip:hover { color: var(--text); }
+.fb-right { display: inline-flex; align-items: center; gap: .6rem; }
+.admin-link { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; color: #5d5578 !important; opacity: .55; transition: opacity .2s, color .2s; }
+.admin-link:hover, .admin-link:focus-visible { opacity: 1; color: var(--amber) !important; }

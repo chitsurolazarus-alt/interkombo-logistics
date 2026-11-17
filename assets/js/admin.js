@@ -55,7 +55,7 @@
               <label class="field" id="pwField"><span>Password</span><div class="pw-wrap"><input class="input" name="p" type="password" autocomplete="current-password" required><button type="button" id="pwToggle" aria-label="Show password">${icon('eye', '', 19)}</button></div></label>
               <button class="btn btn-primary btn-lg btn-block" type="submit" id="lBtn">${icon('lock', '', 18)} Sign in</button>
             </form>
-            <div class="login-links"><button type="button" id="modeBtn">First time? Create the admin account</button><button type="button" id="forgotBtn">Forgot password?</button></div>
+            <div class="login-links"><button type="button" id="modeBtn">Need access? Create an account</button><button type="button" id="forgotBtn">Forgot password?</button></div>
             <a class="back-site" href="index.html">${icon('arrowLeft', '', 16)} Back to website</a>
           </div>
         </div>
@@ -67,12 +67,12 @@
     const ok = (m) => { $('#loginErr').classList.remove('show'); const o = $('#loginOk'); o.textContent = m; o.classList.add('show'); };
     const setMode = (m) => {
       mode = m;
-      $('#lTitle').textContent = m === 'up' ? 'Create admin account' : m === 'forgot' ? 'Reset password' : 'Welcome back';
-      $('#lSub').textContent = m === 'up' ? 'The first account created becomes the admin. Use the business email.' : m === 'forgot' ? 'We’ll email you a link to set a new password.' : 'Sign in to your admin dashboard.';
+      $('#lTitle').textContent = m === 'up' ? 'Create an account' : m === 'forgot' ? 'Reset password' : 'Welcome back';
+      $('#lSub').textContent = m === 'up' ? 'After creating it, an existing admin must approve your email in Settings → Admins.' : m === 'forgot' ? 'We’ll email you a link to set a new password.' : 'Sign in to your admin dashboard.';
       $('#lBtn').innerHTML = m === 'up' ? icon('users', '', 18) + ' Create account' : m === 'forgot' ? icon('mail', '', 18) + ' Send reset link' : icon('lock', '', 18) + ' Sign in';
       $('#pwField').style.display = m === 'forgot' ? 'none' : '';
       $('#loginForm').p.autocomplete = m === 'up' ? 'new-password' : 'current-password';
-      $('#modeBtn').textContent = m === 'in' ? 'First time? Create the admin account' : 'Back to sign in';
+      $('#modeBtn').textContent = m === 'in' ? 'Need access? Create an account' : 'Back to sign in';
       $('#forgotBtn').style.display = m === 'in' ? '' : 'none';
       $('#loginErr').classList.remove('show'); $('#loginOk').classList.remove('show');
     };
