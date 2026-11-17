@@ -693,6 +693,7 @@
           ${fieldHTML({ name: 'popupCode', label: 'Promo code to give', type: 'select', options: promos.map((p) => [p.code, p.code + ' · ' + p.title]) }, m.popupCode)}
           ${fieldHTML({ name: 'popupText', label: 'Popup message', type: 'textarea', rows: 2, full: true }, m.popupText)}
           ${fieldHTML({ name: 'popupDelay', label: 'Show after (seconds)', type: 'number' }, m.popupDelay)}
+          ${fieldHTML({ name: 'popupImage', label: 'Popup photo', type: 'image', full: true }, m.popupImage)}
           <div class="field" style="align-self:end"><button type="button" class="btn btn-ghost" id="previewPopup">${icon('eye', '', 16)} Preview on website</button></div>
         </div></div>
         <div class="card form-section"><div class="card-head"><div><h3>Newsletter signup</h3><p class="help">The signup box at the bottom of every page.</p></div></div><div class="card-pad">
@@ -708,7 +709,7 @@
     $('#previewPopup', el).onclick = () => { try { localStorage.removeItem('ikl_popup_seen'); } catch (e) {} window.open('index.html', '_blank'); toast('Popup will appear on the website after the delay'); };
     $('#mkForm', el).addEventListener('submit', (e) => {
       e.preventDefault(); const f = e.target;
-      const v = readFields(f, [{ name: 'bannerEnabled', type: 'switch' }, { name: 'bannerText' }, { name: 'popupEnabled', type: 'switch' }, { name: 'popupTitle' }, { name: 'popupCode' }, { name: 'popupText' }, { name: 'popupDelay', type: 'number' }, { name: 'newsletterTitle' }, { name: 'newsletterText' }]);
+      const v = readFields(f, [{ name: 'bannerEnabled', type: 'switch' }, { name: 'bannerText' }, { name: 'popupEnabled', type: 'switch' }, { name: 'popupTitle' }, { name: 'popupCode' }, { name: 'popupText' }, { name: 'popupDelay', type: 'number' }, { name: 'popupImage' }, { name: 'newsletterTitle' }, { name: 'newsletterText' }]);
       IKL.update((x) => { x.marketing = Object.assign(x.marketing || {}, v); }); toast('Marketing settings saved'); refresh();
     });
   };

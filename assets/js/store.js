@@ -29,7 +29,7 @@
       eyebrow: 'South Africa · SADC cross-border',
       title: 'Moving your world,',
       highlight: 'safely and on time.',
-      image: 'https://images.unsplash.com/photo-1746985106190-6c116edec9bc?auto=format&fit=crop&w=1400&q=75',
+      image: '',
       subtitle: 'Household removals, office relocations and freight transport across all 9 provinces and into neighbouring countries. You get one team, clear pricing and live tracking.'
     },
     stats: [
@@ -44,30 +44,30 @@
       mission: 'To deliver reliable, affordable and transparent logistics that help people and businesses move forward.',
       vision: 'To be Southern Africa’s most trusted name in removals and cross-border transport.',
       values: ['Reliability', 'Care', 'Transparency', 'Safety', 'Speed'],
-      image: 'https://images.unsplash.com/photo-1543499459-d1460946bdc6?auto=format&fit=crop&w=1400&q=75'
+      image: ''
     },
     media: {
-      why: 'https://images.unsplash.com/photo-1580674285054-bed31e145f59?auto=format&fit=crop&w=1400&q=75',
-      cta: 'https://images.unsplash.com/photo-1682033239487-30f076c82232?auto=format&fit=crop&w=1400&q=75',
-      crossBorder: 'https://images.unsplash.com/photo-1605732562742-3023a888e56e?auto=format&fit=crop&w=1400&q=75'
+      why: '',
+      cta: '',
+      crossBorder: ''
     },
     services: [
-      { id: 'removals', image: 'https://images.unsplash.com/photo-1758523671285-9ff3f4e0ff38?auto=format&fit=crop&w=1400&q=75', icon: 'home', title: 'Home Removals', short: 'Stress-free household moves, packed, loaded and delivered with care.',
+      { id: 'removals', image: '', icon: 'home', title: 'Home Removals', short: 'Stress-free household moves, packed, loaded and delivered with care.',
         description: 'From a single room to a full family home, our trained crew wraps, loads, transports and places every item where you want it. We supply blankets, wrapping and boxes so nothing arrives damaged.',
         features: ['Professional packing & wrapping', 'Furniture dismantling & assembly', 'Fragile & high-value item handling', 'Same-day local moves'] },
-      { id: 'relocation', image: 'https://images.unsplash.com/photo-1577412647305-991150c7d163?auto=format&fit=crop&w=1400&q=75', icon: 'building', title: 'Office & Corporate Relocation', short: 'Move your business with minimal downtime, even over a weekend.',
+      { id: 'relocation', image: '', icon: 'building', title: 'Office & Corporate Relocation', short: 'Move your business with minimal downtime, even over a weekend.',
         description: 'We plan office moves around your operations: labelled crates, IT equipment handling and after-hours or weekend moves so your team is working on Monday morning.',
         features: ['After-hours & weekend moves', 'IT & server equipment care', 'Labelled crate system', 'Dedicated move coordinator'] },
-      { id: 'freight', image: 'https://images.unsplash.com/photo-1720811559371-7b0ebd219127?auto=format&fit=crop&w=1400&q=75', icon: 'truck', title: 'Goods Transportation', short: 'Reliable freight for suppliers, retailers and contractors.',
+      { id: 'freight', image: '', icon: 'truck', title: 'Goods Transportation', short: 'Reliable freight for suppliers, retailers and contractors.',
         description: 'Full-load and part-load transport for stock, building materials, equipment and palletised goods, from 1-ton bakkies to 14-ton trucks.',
         features: ['Full & part loads (FTL / LTL)', 'Palletised & bulk goods', 'Construction material delivery', 'Scheduled contract runs'] },
-      { id: 'cross-border', image: 'https://images.unsplash.com/photo-1728995848808-2cbb5a891837?auto=format&fit=crop&w=1400&q=75', icon: 'globe', title: 'Cross-Border Freight', short: 'Door-to-door into Zimbabwe, Botswana, Mozambique and more.',
+      { id: 'cross-border', image: '', icon: 'globe', title: 'Cross-Border Freight', short: 'Door-to-door into Zimbabwe, Botswana, Mozambique and more.',
         description: 'We handle the paperwork, the border and the road. Our team helps with customs documentation and clearing so your goods move through Beitbridge, Groblersdorp, Lebombo and other posts without surprises.',
         features: ['Customs documentation support', 'Clearing agent coordination', 'Border status updates', 'Household & commercial loads'] },
-      { id: 'national', image: 'https://images.unsplash.com/photo-1586037856547-c2a6dc6f4380?auto=format&fit=crop&w=1400&q=75', icon: 'route', title: 'Nationwide Delivery', short: 'Long-distance delivery between every major SA city.',
+      { id: 'national', image: '', icon: 'route', title: 'Nationwide Delivery', short: 'Long-distance delivery between every major SA city.',
         description: 'Scheduled and dedicated long-distance runs connecting Gauteng, the Western Cape, KwaZulu-Natal, Limpopo and every province in between.',
         features: ['All 9 provinces', 'Dedicated or shared loads', 'Live tracking & ETAs', 'Proof of delivery'] },
-      { id: 'storage', image: 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=1400&q=75', icon: 'box', title: 'Packing & Storage', short: 'Secure short and long-term storage between moves.',
+      { id: 'storage', image: '', icon: 'box', title: 'Packing & Storage', short: 'Secure short and long-term storage between moves.',
         description: 'Need a place for your goods between homes, or while you renovate? We pack, collect and store your items securely until you are ready.',
         features: ['Packing materials supplied', 'Short & long-term storage', 'Inventory list for every load', 'Collect & redeliver on request'] }
     ],
@@ -177,6 +177,7 @@
       popupText: 'Join our newsletter for moving tips and exclusive deals, and unlock your discount code instantly.',
       popupCode: 'MOVE10',
       popupDelay: 8,
+      popupImage: 'https://images.unsplash.com/photo-1746985106190-6c116edec9bc?auto=format&fit=crop&w=1400&q=75',
       newsletterTitle: 'Moving tips & exclusive deals',
       newsletterText: 'Join our mailing list for promotions, discount codes and helpful moving checklists. No spam, unsubscribe anytime.'
     },
@@ -285,11 +286,8 @@
   // Bring older saved data up to date with new defaults
   function migrate(d) {
     if (d.company && d.company.whatsapp === '27760950954') d.company.whatsapp = DEFAULTS.company.whatsapp;
-    if (d.hero && !d.hero.image) d.hero.image = DEFAULTS.hero.image;
-    if (d.about && !d.about.image) d.about.image = DEFAULTS.about.image;
     d.media = Object.assign(clone(DEFAULTS.media), d.media || {});
     d.marketing = Object.assign(clone(DEFAULTS.marketing), d.marketing || {});
-    (d.services || []).forEach((sv) => { if (!sv.image) { const def = DEFAULTS.services.find((x) => x.id === sv.id); sv.image = def ? def.image : ''; } });
     d.version = 3;
   }
 

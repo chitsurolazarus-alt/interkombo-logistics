@@ -143,7 +143,7 @@
             <span>${icon('checkCircle', '', 18)} SADC cross-border</span>
           </div>
         </div>
-        <div class="hero-visual reveal d2">
+        <div class="hero-visual ${h.image ? 'has-photo' : ''} reveal d2">
           ${h.image ? `<div class="hero-photo"><img src="${E(IMG(h.image, 1100))}" alt="Interkombo truck on the road" fetchpriority="high"></div>` : ''}
           <div class="float-chip c1"><span class="dot-ico">${icon('truck', '', 18)}</span><div><b>On the road</b><small>Pretoria → Harare</small></div></div>
           <div class="qq-card">
@@ -817,7 +817,7 @@
         <div class="pop-bg"></div>
         <div class="pop">
           <button class="pop-x" aria-label="Close">${icon('x', '', 20)}</button>
-          <div class="pop-top">${D().hero.image ? `<img src="${E(IMG(D().hero.image, 800))}" alt="" onerror="this.remove()">` : ''}<span class="pop-badge">${promo ? E(promoText(promo)) : 'EXCLUSIVE'}</span></div>
+          <div class="pop-top">${m.popupImage ? `<img src="${E(IMG(m.popupImage, 800))}" alt="" onerror="this.remove()">` : ''}<span class="pop-badge">${promo ? E(promoText(promo)) : 'EXCLUSIVE'}</span></div>
           <div class="pop-body" id="popBody">
             <h3>${E(m.popupTitle)}</h3>
             <p>${E(m.popupText)}</p>
