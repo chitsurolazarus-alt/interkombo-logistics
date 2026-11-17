@@ -602,8 +602,9 @@
       const rows = (D().subscribers || []).filter((x) => !s || (x.email + ' ' + x.name).toLowerCase().includes(s));
       $('#subList').innerHTML = rows.length ? `<div class="table-wrap"><table class="data"><thead><tr><th>Email</th><th>Name</th><th>Source</th><th>Joined</th><th></th></tr></thead><tbody>
         ${rows.map((x) => `<tr data-sub="${E(x.id)}"><td class="c-span"><b style="word-break:break-all">${E(x.email)}</b></td><td data-l="Name">${E(x.name || '—')}</td><td data-l="Source">${E(x.source || '')}</td><td data-l="Joined">${IKL.timeAgo(x.createdAt)}</td>
-          <td class="c-end" style="white-space:nowrap"><a class="sq-btn" href="mailto:${E(x.email)}" aria-label="Email ${E(x.email)}" onclick="event.stopPropagation()">${icon('mail', '', 15)}</a> <button class="sq-btn danger" data-del="${E(x.id)}" aria-label="Remove">${icon('trash', '', 15)}</button></td></tr>`).join('')}</tbody></table></div>`
+          <td class="c-end" style="white-space:nowrap"><a class="sq-btn" href="mailto:${E(x.email)}" aria-label="Email ${E(x.email)}" data-stop>${icon('mail', '', 15)}</a> <button class="sq-btn danger" data-del="${E(x.id)}" aria-label="Remove">${icon('trash', '', 15)}</button></td></tr>`).join('')}</tbody></table></div>`
         : `<div class="empty">${icon('mail', '', 34)}<p>No subscribers yet. They’ll appear here when visitors join your mailing list.</p></div>`;
+      $$('[data-stop]', $('#subList')).forEach((x) => x.addEventListener('click', (e) => e.stopPropagation()));
       $$('[data-del]', $('#subList')).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); confirmDialog('Remove this subscriber from your list?', () => { IKL.update((d) => { d.subscribers = d.subscribers.filter((x) => x.id !== b.dataset.del); }); toast('Subscriber removed'); refresh(); }); }));
     };
     $('#subSearch').oninput = (e) => { subSearch = e.target.value; draw(); };

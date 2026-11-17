@@ -789,7 +789,7 @@
     $$('.cp-code').forEach((b) => (b.onclick = () => copyText(b.dataset.code, 'Code ' + b.dataset.code + ' copied')));
     $$('img').forEach((im) => { im.addEventListener('error', () => { const w = im.closest('.svc-img, .hero-photo, .about-img, .detail-img, .docs-img'); if (w) w.remove(); else im.remove(); }, { once: true }); });
     main.classList.remove('page-enter'); void main.offsetWidth; main.classList.add('page-enter');
-    const titles = { '': 'Removals, Relocation & Cross-Border Freight', services: 'Services', quote: 'Instant Quote', track: 'Track Shipment', 'cross-border': 'Cross-Border Freight', about: 'About Us', contact: 'Contact' };
+    const titles = { '': 'Removals & Cross-Border Freight', services: 'Services', quote: 'Instant Quote', track: 'Track Shipment', 'cross-border': 'Cross-Border Freight', about: 'About Us', contact: 'Contact' };
     document.title = 'Interkombo Logistics | ' + (titles[p] || 'Page');
     if (keepScroll === true) { $$('.reveal').forEach((el) => el.classList.add('in')); window.scrollTo(0, y); }
     else window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
@@ -817,7 +817,7 @@
         <div class="pop-bg"></div>
         <div class="pop">
           <button class="pop-x" aria-label="Close">${icon('x', '', 20)}</button>
-          <div class="pop-top">${m.popupImage ? `<img src="${E(IMG(m.popupImage, 800))}" alt="" onerror="this.remove()">` : ''}<span class="pop-badge">${promo ? E(promoText(promo)) : 'EXCLUSIVE'}</span></div>
+          <div class="pop-top">${m.popupImage ? `<img src="${E(IMG(m.popupImage, 800))}" alt="">` : ''}<span class="pop-badge">${promo ? E(promoText(promo)) : 'EXCLUSIVE'}</span></div>
           <div class="pop-body" id="popBody">
             <h3>${E(m.popupTitle)}</h3>
             <p>${E(m.popupText)}</p>
@@ -831,6 +831,7 @@
         </div>
       </div>`;
     const close = () => { root.innerHTML = ''; document.body.style.overflow = ''; };
+    const pimg = root.querySelector('.pop-top img'); if (pimg) pimg.addEventListener('error', () => pimg.remove(), { once: true });
     document.body.style.overflow = 'hidden';
     $('.pop-x', root).onclick = close; $('.pop-bg', root).onclick = close; $('.pop-skip', root).onclick = close;
     $('#popForm').addEventListener('submit', (e) => {
