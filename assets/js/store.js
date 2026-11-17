@@ -250,19 +250,35 @@
   const clone = (o) => JSON.parse(JSON.stringify(o));
   let cache = null;
 
+  /* ---------- Supabase connection ---------- */
+  const SUPA_URL = 'https://hnagbyslldklisatkbkm.supabase.co';
+  const SUPA_KEY = 'sb_publishable_AsxVRm0oTKTFOEqKwcNyYw_lvOB4uig';
+  const CONTENT_KEYS = ['company', 'hero', 'stats', 'about', 'media', 'services', 'crossBorder', 'pricing', 'testimonialsSample', 'testimonials', 'faqs', 'promos', 'marketing'];
+  const RECORDS = ['quotes', 'shipments', 'messages', 'subscribers'];
+  const CACHE_KEY = 'ikl_content_cache_v3';
+  const sb = window.supabase && window.supabase.createClient ? window.supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, autoRefreshToken: true } }) : null;
+  let isAdmin = false;
+  let snapshot = {}; // last state known to be in the database
+  const errorListeners = [];
+  const reportError = (msg) => { console.warn('[IKL]', msg); errorListeners.forEach((fn) => fn(msg)); };
+
+  function pickContent(d) { const o = {}; CONTENT_KEYS.forEach((k) => { if (d[k] !== undefined) o[k] = d[k]; }); return o; }
+  function takeSnapshot() {
+    snapshot = { content: JSON.stringify(pickContent(cache)) };
+    RECORDS.forEach((k) => { snapshot[k] = new Map((cache[k] || []).map((x) => [x.id, JSON.stringify(x)])); });
+  }
+
   function load() {
     if (cache) return cache;
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        // fill in any keys added in newer versions
-        cache = Object.assign(clone(DEFAULTS), parsed);
-        migrate(cache);
-        return cache;
-      }
-    } catch (e) { /* storage unavailable */ }
     cache = clone(DEFAULTS);
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (raw) Object.assign(cache, JSON.parse(raw));
+    } catch (e) { /* storage unavailable */ }
+    RECORDS.forEach((k) => { cache[k] = []; }); // records only ever come from the database
+    delete cache.admin;
+    migrate(cache);
+    takeSnapshot();
     return cache;
   }
 
@@ -274,7 +290,7 @@
     d.media = Object.assign(clone(DEFAULTS.media), d.media || {});
     d.marketing = Object.assign(clone(DEFAULTS.marketing), d.marketing || {});
     (d.services || []).forEach((sv) => { if (!sv.image) { const def = DEFAULTS.services.find((x) => x.id === sv.id); sv.image = def ? def.image : ''; } });
-    d.version = 2;
+    d.version = 3;
   }
 
   function findPromo(data, code) {
@@ -287,32 +303,127 @@
   }
 
   const listeners = [];
-  function persist() {
-    try { localStorage.setItem(KEY, JSON.stringify(cache)); } catch (e) { /* ignore */ }
-    listeners.forEach((fn) => fn(cache, false));
+  const notify = (external) => listeners.forEach((fn) => { try { fn(cache, external); } catch (e) { console.error(e); } });
+
+  // Push whatever changed since the last sync to Supabase
+  async function sync() {
+    if (!sb) return;
+    const jobs = [];
+    const content = pickContent(cache);
+    const cJson = JSON.stringify(content);
+    if (cJson !== snapshot.content && isAdmin) {
+      jobs.push(sb.from('site_content').upsert({ id: 'main', data: content, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) reportError('Could not save website content: ' + error.message); }));
+    }
+    RECORDS.forEach((k) => {
+      const prev = snapshot[k] || new Map();
+      const seen = new Set();
+      (cache[k] || []).forEach((item) => {
+        seen.add(item.id);
+        const j = JSON.stringify(item);
+        if (!prev.has(item.id)) {
+          jobs.push(sb.from(k).insert({ id: item.id, created_at: item.createdAt || new Date().toISOString(), data: item }).then(({ error }) => {
+            if (error && error.code !== '23505') reportError('Could not save ' + k.slice(0, -1) + ': ' + error.message);
+          }));
+        } else if (prev.get(item.id) !== j && isAdmin) {
+          jobs.push(sb.from(k).update({ data: item }).eq('id', item.id).then(({ error }) => { if (error) reportError('Could not update ' + k.slice(0, -1) + ': ' + error.message); }));
+        }
+      });
+      if (isAdmin) prev.forEach((_, id) => { if (!seen.has(id)) jobs.push(sb.from(k).delete().eq('id', id).then(({ error }) => { if (error) reportError('Could not delete: ' + error.message); })); });
+    });
+    takeSnapshot();
+    await Promise.all(jobs);
   }
 
-  window.addEventListener('storage', (e) => {
-    if (e.key === KEY) { cache = null; const d = load(); listeners.forEach((fn) => fn(d, true)); }
-  });
+  function persist() {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(pickContent(cache))); } catch (e) { /* ignore */ }
+    notify(false);
+    return sync();
+  }
+
+  // Pull the latest content (everyone) and records (admins only)
+  async function pull() {
+    if (!sb) return;
+    load();
+    const { data, error } = await sb.from('site_content').select('data').eq('id', 'main').maybeSingle();
+    if (error) reportError('Could not load website content: ' + error.message);
+    let seedNeeded = false;
+    if (data && data.data) { Object.assign(cache, data.data); migrate(cache); }
+    else if (!error) seedNeeded = true;
+    if (isAdmin) {
+      const results = await Promise.all(RECORDS.map((k) => sb.from(k).select('data').order('created_at', { ascending: false }).limit(2000)));
+      results.forEach((r, i) => { if (r.error) reportError('Could not load ' + RECORDS[i] + ': ' + r.error.message); else cache[RECORDS[i]] = r.data.map((x) => x.data); });
+    }
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(pickContent(cache))); } catch (e) {}
+    takeSnapshot();
+    if (seedNeeded && isAdmin) { snapshot.content = ''; await sync(); }
+    notify(true);
+  }
+
+  async function checkAdmin() {
+    if (!sb) return false;
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { isAdmin = false; return false; }
+    const { data, error } = await sb.rpc('claim_admin');
+    isAdmin = !error && data === true;
+    return isAdmin;
+  }
+
+  const ready = (async () => { load(); try { await checkAdmin(); await pull(); } catch (e) { reportError(String(e.message || e)); } })();
+
+  const auth = {
+    session: async () => (sb ? (await sb.auth.getSession()).data.session : null),
+    isAdmin: () => isAdmin,
+    signIn: async (email, password) => {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) return { error: error.message };
+      const ok = await checkAdmin();
+      if (!ok) return { notAdmin: true };
+      await pull();
+      return { ok: true };
+    },
+    signUp: async (email, password) => {
+      const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + '/admin.html' } });
+      if (error) return { error: error.message };
+      if (!data.session) return { confirm: true };
+      const ok = await checkAdmin();
+      if (ok) await pull();
+      return ok ? { ok: true } : { notAdmin: true };
+    },
+    signOut: async () => { await sb.auth.signOut(); isAdmin = false; RECORDS.forEach((k) => { cache[k] = []; }); takeSnapshot(); },
+    updatePassword: async (password) => { const { error } = await sb.auth.updateUser({ password }); return error ? error.message : null; },
+    resetPassword: async (email) => { const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/admin.html' }); return error ? error.message : null; },
+    listAdmins: async () => { const { data } = await sb.from('admins').select('user_id,email,created_at').order('created_at'); return data || []; },
+    addAdmin: async (email) => { const { data, error } = await sb.rpc('add_admin', { p_email: email }); return error ? error.message : data; },
+    removeAdmin: async (uid) => { const { error } = await sb.from('admins').delete().eq('user_id', uid); return error ? error.message : null; },
+    email: async () => { const s = await auth.session(); return s ? s.user.email : ''; }
+  };
+  if (sb) sb.auth.onAuthStateChange((evt) => { if (evt === 'PASSWORD_RECOVERY') window.dispatchEvent(new CustomEvent('ikl-password-recovery')); });
 
   window.IKL = {
     STAGES, PLACES, crossSet, uid, now,
+    ready, auth, online: !!sb,
     get: () => load(),
-    save: (d) => { cache = d; persist(); },
+    save: (d) => { cache = d; return persist(); },
     update: (fn) => { const d = load(); fn(d); persist(); return d; },
-    reset: () => { cache = clone(DEFAULTS); persist(); },
+    refresh: () => pull(),
+    onSyncError: (fn) => errorListeners.push(fn),
+    track: async (id) => {
+      if (!sb) return null;
+      const { data, error } = await sb.rpc('track_shipment', { p_id: String(id || '').trim() });
+      if (error) { reportError(error.message); return null; }
+      return data;
+    },
+    resetContent: () => { const d = load(); CONTENT_KEYS.forEach((k) => { d[k] = clone(DEFAULTS[k]); }); return persist(); },
     img: (url, w) => (url && /images\.unsplash\.com/.test(url) && w ? url.replace(/w=\d+/, 'w=' + w) : url || ''),
     onChange: (fn) => listeners.push(fn),
     exportJSON: () => JSON.stringify(load(), null, 2),
-    importJSON: (txt) => { const d = JSON.parse(txt); cache = Object.assign(clone(DEFAULTS), d); migrate(cache); persist(); },
+    importJSON: (txt) => { const d = JSON.parse(txt); delete d.admin; const c = load(); CONTENT_KEYS.concat(RECORDS).forEach((k) => { if (d[k] !== undefined) c[k] = d[k]; }); migrate(c); return persist(); },
     distanceKm, estimate, findPromo: (code) => findPromo(load(), code),
     money: (n) => (Number(n) < 0 ? '−R' : 'R') + Math.abs(Math.round(Number(n) || 0)).toLocaleString('en-ZA').replace(/,/g, ' '),
     nextRef: (prefix, list) => {
       const nums = list.map((x) => parseInt(String(x.id).split('-')[1], 10)).filter((n) => !isNaN(n));
-      const base = prefix === 'IKQ' ? 10400 : 100000;
       if (prefix === 'IKL') return 'IKL-' + String(Math.floor(100000 + Math.random() * 899999));
-      return prefix + '-' + ((nums.length ? Math.max(...nums) : base) + 1);
+      return prefix + '-' + String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 10));
     },
     esc: (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
     fmtDate: (iso, withTime = true) => {

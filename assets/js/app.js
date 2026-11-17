@@ -492,10 +492,11 @@
           <div id="trackOut"></div>
         </div>
       </section>`;
-    const run = (id) => {
+    const run = async (id) => {
       id = String(id || '').trim().toUpperCase();
       if (!id) return;
-      const s = D().shipments.find((x) => x.id.toUpperCase() === id);
+      $('#trackOut').innerHTML = `<div class="track-result"><div class="not-found">${icon('search', '', 32)}<p style="color:var(--muted);margin-top:.75rem">Looking up ${E(id)}…</p></div></div>`;
+      const s = (await IKL.track(id)) || D().shipments.find((x) => x.id.toUpperCase() === id);
       $('#trackOut').innerHTML = s ? trackResult(s) : `<div class="track-result"><div class="not-found">${icon('search', '', 40)}<h3 style="margin-top:1rem">No shipment found</h3><p style="color:var(--muted)">We couldn’t find <b>${E(id)}</b>. Check the number or contact us for help.</p><a class="btn btn-ghost" href="${waHref('Hi, I need help tracking ' + id)}" target="_blank" rel="noopener">${icon('whatsapp', '', 18)} Ask on WhatsApp</a></div></div>`;
     };
     $('#trackForm').addEventListener('submit', (e) => { e.preventDefault(); const v = e.target.id.value; history.replaceState(null, '', '#/track?id=' + encodeURIComponent(v.trim())); run(v); });
@@ -768,8 +769,9 @@
   }
 
   /* ---------- router ---------- */
-  function route() {
+  function route(keepScroll) {
     const { parts, params } = parseHash();
+    const y = scrollY;
     cleanupQuote();
     closeDrawer();
     const p = parts[0] || '';
@@ -789,7 +791,8 @@
     main.classList.remove('page-enter'); void main.offsetWidth; main.classList.add('page-enter');
     const titles = { '': 'Removals, Relocation & Cross-Border Freight', services: 'Services', quote: 'Instant Quote', track: 'Track Shipment', 'cross-border': 'Cross-Border Freight', about: 'About Us', contact: 'Contact' };
     document.title = 'Interkombo Logistics | ' + (titles[p] || 'Page');
-    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    if (keepScroll === true) { $$('.reveal').forEach((el) => el.classList.add('in')); window.scrollTo(0, y); }
+    else window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
   }
 
   /* ---------- discount popup ---------- */
@@ -859,9 +862,9 @@
   $('#toTop').onclick = () => scrollTo({ top: 0, behavior: 'smooth' });
   const onScroll = () => { $('#header').classList.toggle('scrolled', scrollY > 10); $('#toTop').classList.toggle('show', scrollY > 700); };
   addEventListener('scroll', onScroll, { passive: true }); onScroll();
-  addEventListener('hashchange', route);
+  addEventListener('hashchange', () => route());
   // Live-refresh when admin edits content in another tab (skip on quote page so in-progress forms aren't lost)
-  IKL.onChange((d, external) => { if (!external) return; const p = parseHash().parts[0] || ''; if (!['quote', 'contact', 'track'].includes(p)) route(); else renderShell(); });
+  IKL.onChange((d, external) => { if (!external) return; const p = parseHash().parts[0] || ''; if (!['quote', 'contact', 'track'].includes(p)) route(true); else renderShell(); });
   route();
   schedulePopup();
 })();

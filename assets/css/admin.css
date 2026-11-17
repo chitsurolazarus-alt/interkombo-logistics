@@ -285,3 +285,7 @@ table.data td small { display: block; color: var(--muted); font-size: .8rem; }
 .promo-meta { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
 .promo-meta .mono { border: 1.5px dashed var(--orange); color: var(--orange); padding: .25rem .55rem; border-radius: 8px; font-size: .85rem; }
 .promo-meta small { color: var(--muted); font-size: .8rem; }
+.login-ok { color: var(--success); background: var(--success-bg); padding: .7rem .9rem; border-radius: 10px; font-size: .9rem; font-weight: 500; display: none; }
+.login-ok.show { display: block; }
+.login-links { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+.login-links button { background: none; border: 0; padding: .3rem 0; color: var(--link); font-weight: 600; font-size: .9rem; }

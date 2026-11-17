@@ -4,7 +4,7 @@
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const E = IKL.esc;
   const D = () => IKL.get();
-  const AUTH = 'ikl_admin_session';
+  let adminEmail = '';
   const root = $('#root');
 
   const STATUS_Q = [['new', 'New'], ['contacted', 'Contacted'], ['won', 'Won'], ['lost', 'Lost']];
@@ -23,7 +23,7 @@
   }
 
   /* ================= AUTH ================= */
-  const isAuthed = () => { try { return sessionStorage.getItem(AUTH) === '1'; } catch (e) { return false; } };
+  const isAuthed = () => IKL.auth.isAdmin();
   function renderLogin() {
     document.title = 'Admin Login | Interkombo Logistics';
     root.innerHTML = `
@@ -46,34 +46,57 @@
           <div class="login-card">
             <img class="m-logo logo-light" src="assets/img/logo-light.png" alt="Interkombo Logistics">
             <img class="m-logo logo-dark" src="assets/img/logo-dark.png" alt="Interkombo Logistics">
-            <h1>Welcome back</h1>
-            <p class="sub">Sign in to your admin dashboard.</p>
+            <h1 id="lTitle">Welcome back</h1>
+            <p class="sub" id="lSub">Sign in to your admin dashboard.</p>
             <form id="loginForm" novalidate>
-              <div class="login-err" id="loginErr">Incorrect username or password.</div>
-              <label class="field"><span>Username</span><input class="input" name="u" autocomplete="username" autocapitalize="none" required></label>
-              <label class="field"><span>Password</span><div class="pw-wrap"><input class="input" name="p" type="password" autocomplete="current-password" required><button type="button" id="pwToggle" aria-label="Show password">${icon('eye', '', 19)}</button></div></label>
-              <button class="btn btn-primary btn-lg btn-block" type="submit">${icon('lock', '', 18)} Sign in</button>
+              <div class="login-err" id="loginErr"></div>
+              <div class="login-ok" id="loginOk"></div>
+              <label class="field"><span>Email</span><input class="input" name="u" type="email" autocomplete="email" autocapitalize="none" required></label>
+              <label class="field" id="pwField"><span>Password</span><div class="pw-wrap"><input class="input" name="p" type="password" autocomplete="current-password" required><button type="button" id="pwToggle" aria-label="Show password">${icon('eye', '', 19)}</button></div></label>
+              <button class="btn btn-primary btn-lg btn-block" type="submit" id="lBtn">${icon('lock', '', 18)} Sign in</button>
             </form>
+            <div class="login-links"><button type="button" id="modeBtn">First time? Create the admin account</button><button type="button" id="forgotBtn">Forgot password?</button></div>
             <a class="back-site" href="index.html">${icon('arrowLeft', '', 16)} Back to website</a>
           </div>
         </div>
       </div>`;
     bindTheme();
     $('#pwToggle').onclick = () => { const i = $('#loginForm').p; i.type = i.type === 'password' ? 'text' : 'password'; };
-    $('#loginForm').addEventListener('submit', (e) => {
+    let mode = 'in';
+    const err = (m) => { const er = $('#loginErr'); $('#loginOk').classList.remove('show'); er.textContent = m; er.classList.remove('show'); void er.offsetWidth; er.classList.add('show'); };
+    const ok = (m) => { $('#loginErr').classList.remove('show'); const o = $('#loginOk'); o.textContent = m; o.classList.add('show'); };
+    const setMode = (m) => {
+      mode = m;
+      $('#lTitle').textContent = m === 'up' ? 'Create admin account' : m === 'forgot' ? 'Reset password' : 'Welcome back';
+      $('#lSub').textContent = m === 'up' ? 'The first account created becomes the admin. Use the business email.' : m === 'forgot' ? 'We’ll email you a link to set a new password.' : 'Sign in to your admin dashboard.';
+      $('#lBtn').innerHTML = m === 'up' ? icon('users', '', 18) + ' Create account' : m === 'forgot' ? icon('mail', '', 18) + ' Send reset link' : icon('lock', '', 18) + ' Sign in';
+      $('#pwField').style.display = m === 'forgot' ? 'none' : '';
+      $('#loginForm').p.autocomplete = m === 'up' ? 'new-password' : 'current-password';
+      $('#modeBtn').textContent = m === 'in' ? 'First time? Create the admin account' : 'Back to sign in';
+      $('#forgotBtn').style.display = m === 'in' ? '' : 'none';
+      $('#loginErr').classList.remove('show'); $('#loginOk').classList.remove('show');
+    };
+    $('#modeBtn').onclick = () => setMode(mode === 'in' ? 'up' : 'in');
+    $('#forgotBtn').onclick = () => setMode('forgot');
+    $('#loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const f = e.target, a = D().admin;
-      if (f.u.value.trim().toLowerCase() === String(a.username).toLowerCase() && f.p.value === a.password) {
-        try { sessionStorage.setItem(AUTH, '1'); } catch (er) {}
+      const f = e.target, email = f.u.value.trim(), pw = f.p.value, btn = $('#lBtn');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return err('Please enter a valid email address.');
+      if (mode !== 'forgot' && pw.length < (mode === 'up' ? 8 : 1)) return err(mode === 'up' ? 'Use a password of at least 8 characters.' : 'Please enter your password.');
+      btn.disabled = true; const label = btn.innerHTML; btn.textContent = 'Please wait…';
+      try {
+        if (mode === 'forgot') { const m = await IKL.auth.resetPassword(email); m ? err(m) : ok('Check your email for a link to reset your password.'); return; }
+        const r = mode === 'up' ? await IKL.auth.signUp(email, pw) : await IKL.auth.signIn(email, pw);
+        if (r.error) return err(/Invalid login/i.test(r.error) ? 'Incorrect email or password.' : r.error);
+        if (r.confirm) { setMode('in'); return ok('Account created. Check your email and click the confirmation link, then sign in here.'); }
+        if (r.notAdmin) { await IKL.auth.signOut(); return err('This account is not an admin yet. Ask an existing admin to add your email in Settings → Admins.'); }
         if (!location.hash || location.hash === '#') location.hash = '#/dashboard';
         boot();
-      } else {
-        const er = $('#loginErr'); er.classList.remove('show'); void er.offsetWidth; er.classList.add('show');
-      }
+      } finally { btn.disabled = false; if (!btn.textContent.includes('wait') ) {} else btn.innerHTML = label; }
     });
     setTimeout(() => $('#loginForm').u.focus(), 50);
   }
-  function logout() { try { sessionStorage.removeItem(AUTH); } catch (e) {} location.hash = ''; boot(); }
+  async function logout() { await IKL.auth.signOut(); location.hash = ''; boot(); }
 
   function bindTheme() {
     const b = $('#themeBtn'); if (!b) return;
@@ -106,7 +129,7 @@
           </nav>
           <div class="sb-foot">
             <a class="btn btn-ghost btn-sm" href="index.html" target="_blank" rel="noopener">${icon('external', '', 16)} View website</a>
-            <div class="sb-user"><span class="avatar">${E(initials(d.admin.username))}</span><div><b>${E(d.admin.username)}</b><small>Administrator</small></div><button id="logoutBtn" aria-label="Log out" title="Log out">${icon('logout', '', 19)}</button></div>
+            <div class="sb-user"><span class="avatar">${E(initials(adminEmail))}</span><div style="min-width:0"><b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${E(adminEmail)}</b><small>Administrator</small></div><button id="logoutBtn" aria-label="Log out" title="Log out">${icon('logout', '', 19)}</button></div>
           </div>
         </aside>
         <div class="sb-backdrop" id="sbBackdrop"></div>
@@ -738,27 +761,44 @@
 
   /* ---------- Settings ---------- */
   V.settings = (el) => {
-    const a = D().admin;
     el.innerHTML = `
-      <div class="card form-section"><div class="card-head"><div><h3>Admin login</h3><p class="help">Change the username and password used to sign in.</p></div></div>
+      <div class="card form-section"><div class="card-head"><div><h3>Your password</h3><p class="help">Signed in as ${E(adminEmail)}</p></div></div>
         <form class="card-pad" id="accForm" novalidate>
-          ${fieldHTML({ name: 'username', label: 'Username', required: true }, a.username)}
-          ${fieldHTML({ name: 'password', label: 'New password', type: 'password', placeholder: 'Leave blank to keep current' }, '')}
-          <div class="full"><button class="btn btn-brand" type="submit">${icon('lock', '', 17)} Update login</button></div>
+          ${fieldHTML({ name: 'password', label: 'New password', type: 'password', placeholder: 'At least 8 characters' }, '')}
+          ${fieldHTML({ name: 'password2', label: 'Confirm new password', type: 'password' }, '')}
+          <div class="full"><button class="btn btn-brand" type="submit">${icon('lock', '', 17)} Change password</button></div>
         </form></div>
+      <div class="card form-section"><div class="card-head"><div><h3>Admins</h3><p class="help">People who can sign in to this dashboard. To add someone: they first tap “Create the admin account” on the login page with their email, then you add that email here.</p></div></div>
+        <div class="card-pad"><div class="full" id="adminList"><p class="help">Loading…</p></div>
+          <form class="full" id="addAdminForm" style="display:flex;gap:.6rem;flex-wrap:wrap" novalidate><input class="input" name="email" type="email" placeholder="their@email.com" style="flex:1 1 220px"><button class="btn btn-ghost" type="submit">${icon('plus', '', 17)} Add admin</button></form>
+        </div></div>
       <div class="card form-section"><div class="card-head"><div><h3>Backup & restore</h3><p class="help">Download all website content and records, or restore from a backup file.</p></div></div>
         <div class="card-pad"><button class="btn btn-ghost" id="exp">${icon('download', '', 17)} Download backup</button><label class="btn btn-ghost" style="cursor:pointer">${icon('upload', '', 17)} Restore backup<input type="file" id="imp" accept="application/json" hidden></label></div></div>
-      <div class="card form-section danger-zone"><div class="card-head"><div><h3 style="color:var(--danger)">Reset demo data</h3><p class="help">Restores the original demo content. All your changes, quotes and shipments will be removed.</p></div></div>
-        <div class="card-pad"><div><button class="btn btn-danger" id="resetBtn">${icon('refresh', '', 17)} Reset everything</button></div></div></div>`;
-    $('#accForm').addEventListener('submit', (e) => {
-      e.preventDefault(); const f = e.target; const u = f.username.value.trim(), p = f.password.value;
-      if (!u) { f.username.classList.add('invalid'); return; }
-      if (p && p.length < 6) { f.password.classList.add('invalid'); toast('Password must be at least 6 characters'); return; }
-      IKL.update((d) => { d.admin.username = u; if (p) d.admin.password = p; }); toast('Login details updated'); refresh();
+      <div class="card form-section danger-zone"><div class="card-head"><div><h3 style="color:var(--danger)">Reset website content</h3><p class="help">Puts all website text, services, prices and promotions back to the original design. Quotes, shipments, messages and subscribers are kept.</p></div></div>
+        <div class="card-pad"><div><button class="btn btn-danger" id="resetBtn">${icon('refresh', '', 17)} Reset content</button></div></div></div>`;
+    const drawAdmins = async () => {
+      const list = await IKL.auth.listAdmins();
+      const me = (await IKL.auth.session())?.user.id;
+      $('#adminList').innerHTML = list.map((a) => `<div class="list-item" style="padding:.7rem 0;cursor:default"><span class="li-ico">${icon('users', '', 18)}</span><div class="li-main"><b>${E(a.email || '')}</b><small>Admin since ${E(IKL.fmtDate(a.created_at, false))}</small></div>${a.user_id === me ? '<small style="color:var(--muted)">You</small>' : `<button class="sq-btn danger" data-rm="${E(a.user_id)}" aria-label="Remove admin">${icon('trash', '', 15)}</button>`}</div>`).join('');
+      $$('[data-rm]', el).forEach((b) => (b.onclick = () => confirmDialog('Remove this person’s admin access?', async () => { const m = await IKL.auth.removeAdmin(b.dataset.rm); toast(m || 'Admin removed'); drawAdmins(); }, 'Remove')));
+    };
+    drawAdmins();
+    $('#addAdminForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); const em = e.target.email.value.trim(); if (!em) return;
+      const r = await IKL.auth.addAdmin(em);
+      if (r === 'ok') { toast('Admin added'); e.target.reset(); drawAdmins(); }
+      else if (r === 'no_account') toast('No account with that email yet. Ask them to create one on the login page first.');
+      else toast(r);
+    });
+    $('#accForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); const f = e.target; const p = f.password.value;
+      if (p.length < 8) { f.password.classList.add('invalid'); toast('Password must be at least 8 characters'); return; }
+      if (p !== f.password2.value) { f.password2.classList.add('invalid'); toast('Passwords don’t match'); return; }
+      const m = await IKL.auth.updatePassword(p); toast(m || 'Password changed'); if (!m) f.reset();
     });
     $('#exp').onclick = () => { const blob = new Blob([IKL.exportJSON()], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a2 = document.createElement('a'); a2.href = url; a2.download = 'interkombo-backup-' + new Date().toISOString().slice(0, 10) + '.json'; a2.click(); URL.revokeObjectURL(url); toast('Backup downloaded'); };
     $('#imp').onchange = (e) => { const file = e.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = () => { try { IKL.importJSON(r.result); toast('Backup restored'); refresh(); } catch (er) { toast('That file is not a valid backup'); } }; r.readAsText(file); };
-    $('#resetBtn').onclick = () => confirmDialog('Reset all content and records back to the demo data?', () => { IKL.reset(); toast('Demo data restored'); refresh(); }, 'Reset');
+    $('#resetBtn').onclick = () => confirmDialog('Reset all website content back to the original design?', () => { IKL.resetContent(); toast('Website content reset'); refresh(); }, 'Reset');
   };
 
   /* ================= ROUTER ================= */
@@ -780,10 +820,19 @@
     V[view]($('#view'), params);
     scrollTo(0, 0);
   }
-  function boot() { route(); }
+  async function boot() {
+    if (!root.children.length) root.innerHTML = '<div style="min-height:100vh;display:grid;place-items:center;color:var(--muted)">Loading…</div>';
+    await IKL.ready;
+    adminEmail = await IKL.auth.email();
+    route();
+  }
+  IKL.onSyncError((m) => toast(m));
+  window.addEventListener('ikl-password-recovery', () => { location.hash = '#/settings'; setTimeout(() => toast('Set your new password below'), 600); });
+  // Check for new quotes and messages every minute
+  setInterval(() => { if (isAuthed() && !dirty && !$('#modals').children.length && document.visibilityState === 'visible') IKL.refresh(); }, 60000);
   addEventListener('hashchange', route);
   addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
   // New quotes/messages from the website (other tab) update the dashboard live
-  IKL.onChange(() => { if (isAuthed() && !dirty && !$('#modals').children.length) refresh(); });
+  IKL.onChange((d, external) => { if (external && isAuthed() && !dirty && !$('#modals').children.length) refresh(); });
   boot();
 })();
