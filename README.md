@@ -7,6 +7,7 @@ Built by L.C Digital Solution WebCraft Studios.
 | File / folder | What it is |
 |---|---|
 | `index.html` | Public website (home, services, cross-border, quote calculator, tracking, about, contact) |
+| `sitemap.xml`, `robots.txt` | For Google: sitemap of the site; robots keeps the admin page out of search |
 | `admin.html` | Admin dashboard (also reachable from the small 🔒 in the website footer) |
 | `assets/js/store.js` | Data layer — connects to Supabase (content, quotes, shipments, messages, subscribers, logins) |
 | `assets/js/app.js` | Website logic |
@@ -34,6 +35,7 @@ It is a plain static site: no build step. Upload the folder to any host (Vercel,
 
 1. Point the domain at the hosting (Vercel/Cloudflare).
 2. In Supabase → **Authentication → URL Configuration**, set **Site URL** to the new domain and add it to **Redirect URLs**. This makes "Forgot password" emails work.
+3. In `sitemap.xml`, `robots.txt` and the `canonical` line in `index.html`, replace `https://interkombo-logistics.vercel.app` with the new domain, then submit the sitemap in Google Search Console.
 
 ## Notes
 
