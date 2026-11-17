@@ -289,3 +289,4 @@ table.data td small { display: block; color: var(--muted); font-size: .8rem; }
 .login-ok.show { display: block; }
 .login-links { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
 .login-links button { background: none; border: 0; padding: .3rem 0; color: var(--link); font-weight: 600; font-size: .9rem; }
+.grid-2 > *, .grid-4 > *, .item-grid > *, .main-col, .content > * { min-width: 0; }
